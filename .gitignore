@@ -1,0 +1,9 @@
+# React Native
+ios/generated
+android/generated
+src/common
+
+# compiled output
+dist
+tmp
+out-tsc

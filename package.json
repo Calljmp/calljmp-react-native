@@ -1,0 +1,113 @@
+{
+  "name": "@calljmp/react-native",
+  "version": "0.0.1-preview",
+  "description": "Calljmp SDK for React Native",
+  "main": "./src/index.ts",
+  "module": "./dist/index.esm.js",
+  "types": "./dist/index.esm.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.esm.d.ts",
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "peerDependencies": {
+    "react": "*",
+    "react-native": "*"
+  },
+  "keywords": [
+    "react-native",
+    "ios",
+    "android"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Calljmp/calljmp-react-native.git"
+  },
+  "author": "Calljmp <info@calljmp.com> (https://calljmp.com)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Calljmp/calljmp-react-native/issues"
+  },
+  "homepage": "https://github.com/Calljmp/calljmp-react-native#readme",
+  "codegenConfig": {
+    "name": "RNCalljmpSpec",
+    "type": "modules",
+    "jsSrcsDir": "src/specs",
+    "android": {
+      "javaPackageName": "com.calljmp.rn"
+    },
+    "includesGeneratedCode": true
+  },
+  "nx": {
+    "name": "sdk",
+    "sourceRoot": "libs/sdk/src",
+    "projectType": "library",
+    "tags": [],
+    "targets": {
+      "sync-common": {
+        "executor": "nx:run-commands",
+        "options": {
+          "cwd": ".",
+          "commands": [
+            "rm -rf ./libs/sdk/src/common && mkdir -p ./libs/sdk/src/common && cp -r ./libs/common/src/* ./libs/sdk/src/common/"
+          ]
+        }
+      },
+      "codegen": {
+        "executor": "nx:run-commands",
+        "options": {
+          "cwd": ".",
+          "commands": [
+            "node ./node_modules/react-native/scripts/generate-codegen-artifacts.js --path ./libs/sdk --outputPath ./libs/sdk/ios/generated/ --targetPlatform ios"
+          ]
+        }
+      },
+      "git-publish": {
+        "executor": "nx:run-commands",
+        "dependsOn": [
+          "sync-common",
+          "codegen",
+          "typecheck"
+        ],
+        "options": {
+          "cwd": "libs/sdk",
+          "commands": [
+            "./tools/git-publish.sh ${npm_package_version}"
+          ]
+        }
+      },
+      "build": {
+        "executor": "@nx/rollup:rollup",
+        "outputs": [
+          "{options.outputPath}"
+        ],
+        "dependsOn": [
+          "sync-common"
+        ],
+        "options": {
+          "outputPath": "libs/sdk/dist",
+          "tsConfig": "libs/sdk/tsconfig.lib.json",
+          "project": "libs/sdk/package.json",
+          "entryFile": "libs/sdk/src/index.ts",
+          "external": [
+            "react/jsx-runtime",
+            "react-native",
+            "react",
+            "react-dom"
+          ],
+          "rollupConfig": "@nx/react/plugins/bundle-rollup",
+          "assets": [
+            {
+              "glob": "libs/sdk/README.md",
+              "input": ".",
+              "output": "."
+            }
+          ]
+        }
+      }
+    }
+  }
+}
