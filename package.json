@@ -1,6 +1,6 @@
 {
   "name": "@calljmp/react-native",
-  "version": "0.0.1-preview",
+  "version": "0.0.2-preview",
   "description": "Calljmp SDK for React Native",
   "main": "./src/index.ts",
   "module": "./dist/index.esm.js",
