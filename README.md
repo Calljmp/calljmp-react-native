@@ -3,7 +3,7 @@
 **Secure backend-as-a-service for mobile developers. No API keys. Full SQLite control.**
 
 [![npm version](https://img.shields.io/npm/v/@calljmp/react-native)](https://www.npmjs.com/package/@calljmp/react-native)
-[![GitHub license](https://img.shields.io/github/license/calljmp/react-native-sdk)](LICENSE)
+[![GitHub license](https://img.shields.io/github/license/Calljmp/calljmp-react-native)](LICENSE)
 [![React Native](https://img.shields.io/badge/React%20Native-Compatible-blue)](https://reactnative.dev/)
 
 ## 🚀 Overview

@@ -75,7 +75,7 @@
         "options": {
           "cwd": "libs/sdk",
           "commands": [
-            "./tools/git-publish.sh ${npm_package_version}"
+            "./tools/git-publish.sh 0.0.2-preview"
           ]
         }
       },
