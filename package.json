@@ -1,19 +1,8 @@
 {
   "name": "@calljmp/react-native",
-  "version": "0.0.9-preview",
+  "version": "0.0.10-preview",
   "description": "Calljmp SDK for React Native",
-  "main": "./index.cjs.js",
-  "module": "./index.esm.js",
-  "types": "./index.esm.d.ts",
-  "exports": {
-    ".": {
-      "types": "./index.esm.d.ts",
-      "import": "./index.esm.js",
-      "require": "./index.cjs.js",
-      "default": "./index.cjs.js"
-    },
-    "./package.json": "./package.json"
-  },
+  "main": "./src/index.ts",
   "peerDependencies": {
     "react": "*",
     "react-native": "*"
@@ -93,6 +82,18 @@
         }
       },
       "build": {
+        "executor": "nx:run-commands",
+        "dependsOn": [
+          "bundle"
+        ],
+        "options": {
+          "cwd": "libs/sdk/dist",
+          "commands": [
+            "../tools/package.sh"
+          ]
+        }
+      },
+      "bundle": {
         "executor": "@nx/rollup:rollup",
         "outputs": [
           "{options.outputPath}"

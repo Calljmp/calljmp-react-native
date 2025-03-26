@@ -13,11 +13,9 @@ export class Calljmp {
   private _database: Database;
 
   constructor(config: Partial<Config> = {}) {
-    const baseUrl = (
-      config.development?.enabled
-        ? config.development?.baseUrl
-        : null
-    ) ?? 'https://api.calljmp.com';
+    const baseUrl =
+      (config.development?.enabled ? config.development?.baseUrl : null) ??
+      'https://api.calljmp.com';
 
     const finalConfig: Config = {
       serviceUrl: `${baseUrl}/target/v1`,
