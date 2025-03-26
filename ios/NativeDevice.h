@@ -2,7 +2,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface NativeDevice : NSObject<NativeDeviceSpec>
+@interface NativeCalljmpDevice : NSObject<NativeCalljmpDeviceSpec>
 @end
 
 NS_ASSUME_NONNULL_END

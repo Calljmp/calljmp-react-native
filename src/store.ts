@@ -1,4 +1,4 @@
-import NativeStore from './specs/NativeStore';
+import NativeStore from './specs/NativeCalljmpStore';
 
 export type StoreKey = 'accessToken';
 

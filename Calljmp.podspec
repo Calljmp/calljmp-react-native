@@ -1,6 +1,8 @@
 require "json"
 
 package = JSON.parse(File.read(File.join(__dir__, "package.json")))
+
+new_arch_enabled = ENV['RCT_NEW_ARCH_ENABLED'] == '1'
 folly_compiler_flags = '-DFOLLY_NO_CONFIG -DFOLLY_MOBILE=1 -DFOLLY_USE_LIBCPP=1 -Wno-comma -Wno-shorten-64-to-32'
 
 Pod::Spec.new do |s|
@@ -14,8 +16,8 @@ Pod::Spec.new do |s|
   s.platforms    = { :ios => min_ios_version_supported }
   s.source       = { :git => "https://github.com/Calljmp/calljmp-react-native.git", :tag => "#{s.version}" }
 
-  s.source_files = "ios/*.{h,m,mm,cpp}", "ios/generated/RNCalljmpSpec/**/*.{h,m,mm,cpp}"
-  s.private_header_files = "ios/generated/RNCalljmpSpec/**/*.h"
+  s.source_files = "ios/*.{h,m,mm,cpp}", "ios/generated/RNCalljmpSpec/RNCalljmpSpec-generated.mm"
+  s.private_header_files = "ios/generated/RNCalljmpSpec.h"
 
   s.ios.deployment_target = '14.0'
 
@@ -26,21 +28,23 @@ Pod::Spec.new do |s|
   if respond_to?(:install_modules_dependencies, true)
     install_modules_dependencies(s)
   else
-    s.dependency "React-Core"
-
     # Don't install the dependencies when we run `pod install` in the old architecture.
-    if ENV['RCT_NEW_ARCH_ENABLED'] == '1' then
+    if new_arch_enabled then
       s.compiler_flags = folly_compiler_flags + " -DRCT_NEW_ARCH_ENABLED=1"
+
       s.pod_target_xcconfig    = {
           "HEADER_SEARCH_PATHS" => "\"$(PODS_ROOT)/boost\"",
           "OTHER_CPLUSPLUSFLAGS" => "-DFOLLY_NO_CONFIG -DFOLLY_MOBILE=1 -DFOLLY_USE_LIBCPP=1",
           "CLANG_CXX_LANGUAGE_STANDARD" => "c++17",
       }
+
       s.dependency "React-Codegen"
       s.dependency "RCT-Folly"
       s.dependency "RCTRequired"
       s.dependency "RCTTypeSafety"
       s.dependency "ReactCommon/turbomodule/core"
+    else
+      s.dependency "React-Core"
     end
   end
 end

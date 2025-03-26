@@ -1,12 +1,12 @@
 #import "NativeStore.h"
 
-@implementation NativeStore {
+@implementation NativeCalljmpStore {
 }
 
-RCT_EXPORT_MODULE(NativeStore);
+RCT_EXPORT_MODULE(NativeCalljmpStore);
 
 - (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:(const facebook::react::ObjCTurboModule::InitParams &)params {
-  return std::make_shared<facebook::react::NativeStoreSpecJSI>(params);
+  return std::make_shared<facebook::react::NativeCalljmpStoreSpecJSI>(params);
 }
 
 - (void)securePut:(NSString *)key

@@ -1,15 +1,16 @@
 {
   "name": "@calljmp/react-native",
-  "version": "0.0.2-preview",
+  "version": "0.0.8-preview",
   "description": "Calljmp SDK for React Native",
-  "main": "./src/index.ts",
-  "module": "./dist/index.esm.js",
-  "types": "./dist/index.esm.d.ts",
+  "main": "./index.cjs.js",
+  "module": "./index.esm.js",
+  "types": "./index.esm.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.esm.d.ts",
-      "import": "./src/index.ts",
-      "default": "./src/index.ts"
+      "types": "./index.esm.d.ts",
+      "import": "./index.esm.js",
+      "require": "./index.cjs.js",
+      "default": "./index.cjs.js"
     },
     "./package.json": "./package.json"
   },
@@ -75,7 +76,19 @@
         "options": {
           "cwd": "libs/sdk",
           "commands": [
-            "./tools/git-publish.sh 0.0.2-preview"
+            "./tools/git-publish.sh"
+          ]
+        }
+      },
+      "publish": {
+        "executor": "nx:run-commands",
+        "dependsOn": [
+          "build"
+        ],
+        "options": {
+          "cwd": "libs/sdk/dist",
+          "commands": [
+            "npm publish --access public"
           ]
         }
       },
@@ -85,13 +98,18 @@
           "{options.outputPath}"
         ],
         "dependsOn": [
-          "sync-common"
+          "sync-common",
+          "codegen"
         ],
         "options": {
           "outputPath": "libs/sdk/dist",
           "tsConfig": "libs/sdk/tsconfig.lib.json",
           "project": "libs/sdk/package.json",
           "entryFile": "libs/sdk/src/index.ts",
+          "format": [
+            "esm",
+            "cjs"
+          ],
           "external": [
             "react/jsx-runtime",
             "react-native",
@@ -101,7 +119,32 @@
           "rollupConfig": "@nx/react/plugins/bundle-rollup",
           "assets": [
             {
+              "glob": "libs/sdk/package.json",
+              "input": ".",
+              "output": "."
+            },
+            {
               "glob": "libs/sdk/README.md",
+              "input": ".",
+              "output": "."
+            },
+            {
+              "glob": "libs/sdk/LICENSE",
+              "input": ".",
+              "output": "."
+            },
+            {
+              "glob": "libs/sdk/android",
+              "input": ".",
+              "output": "."
+            },
+            {
+              "glob": "libs/sdk/ios",
+              "input": ".",
+              "output": "."
+            },
+            {
+              "glob": "libs/sdk/Calljmp.podspec",
               "input": ".",
               "output": "."
             }

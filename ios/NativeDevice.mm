@@ -3,14 +3,14 @@
 
 #import "NativeDevice.h"
 
-@implementation NativeDevice {
+@implementation NativeCalljmpDevice {
   DCAppAttestService *_attestService;
 }
 
-RCT_EXPORT_MODULE(NativeDevice);
+RCT_EXPORT_MODULE(NativeCalljmpDevice);
 
 - (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:(const facebook::react::ObjCTurboModule::InitParams &)params {
-  return std::make_shared<facebook::react::NativeDeviceSpecJSI>(params);
+  return std::make_shared<facebook::react::NativeCalljmpDeviceSpecJSI>(params);
 }
 
 - (instancetype)init

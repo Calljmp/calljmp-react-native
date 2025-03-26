@@ -2,7 +2,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface NativeStore : NSObject<NativeStoreSpec>
+@interface NativeCalljmpStore : NSObject<NativeCalljmpStoreSpec>
 @end
 
 NS_ASSUME_NONNULL_END

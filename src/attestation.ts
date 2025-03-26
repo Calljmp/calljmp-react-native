@@ -1,4 +1,4 @@
-import NativeDevice from './specs/NativeDevice';
+import NativeDevice from './specs/NativeCalljmpDevice';
 
 export class Attestation {
   private _keyId: string | null = null;

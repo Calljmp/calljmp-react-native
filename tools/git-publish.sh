@@ -2,12 +2,7 @@
 
 set -e
 
-if [ -z "$1" ]; then
-  echo "Usage: $0 <version>"
-  exit 1
-fi
-
-VERSION=$1
+VERSION=$(node -e "console.log(require('./package.json').version)")
 
 rm -rf .git
 
