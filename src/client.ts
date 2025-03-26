@@ -13,18 +13,15 @@ export class Calljmp {
   private _database: Database;
 
   constructor(config: Partial<Config> = {}) {
-    config.development = {
-      enabled: process.env.NODE_ENV === 'development',
-      ...config.development,
-    };
-
-    const host = config.development?.enabled
-      ? 'http://192.168.86.28:8787'
-      : 'https://api.calljmp.com';
+    const baseUrl = (
+      config.development?.enabled
+        ? config.development?.baseUrl
+        : null
+    ) ?? 'https://api.calljmp.com';
 
     const finalConfig: Config = {
-      serviceUrl: `${host}/target/v1`,
-      projectUrl: `${host}/project`,
+      serviceUrl: `${baseUrl}/target/v1`,
+      projectUrl: `${baseUrl}/project`,
       ...config,
     };
 

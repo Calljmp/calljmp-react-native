@@ -4,6 +4,7 @@ export interface Config {
 
   development?: {
     enabled?: boolean;
+    baseUrl?: string;
     apiToken?: string;
   };
 }
