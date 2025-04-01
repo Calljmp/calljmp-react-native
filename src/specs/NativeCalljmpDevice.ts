@@ -2,8 +2,6 @@ import type { TurboModule } from 'react-native';
 import { TurboModuleRegistry } from 'react-native';
 
 export interface Spec extends TurboModule {
-  isSimulator(): boolean;
-
   appleGenerateAttestationKey(): Promise<string>;
   appleAttestKey(
     keyId: string,
@@ -12,6 +10,14 @@ export interface Spec extends TurboModule {
     attestation: string;
     bundleId: string;
     keyId: string;
+  }>;
+
+  androidRequestIntegrityToken(
+    cloudProjectNumber: number,
+    data: string
+  ): Promise<{
+    integrityToken: string;
+    packageName: string;
   }>;
 }
 

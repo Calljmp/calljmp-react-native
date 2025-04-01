@@ -7,3 +7,4 @@ src/common
 dist
 tmp
 out-tsc
+build

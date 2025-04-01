@@ -24,14 +24,6 @@ RCT_EXPORT_MODULE(NativeCalljmpDevice);
   return self;
 }
 
-- (NSNumber *)isSimulator {
-#if TARGET_IPHONE_SIMULATOR
-  return @YES;
-#else
-  return @NO;
-#endif
-}
-
 - (void)appleGenerateAttestationKey:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject { 
   if (@available(iOS 14.0, *)) {
     if (![_attestService isSupported]) {
@@ -80,6 +72,10 @@ RCT_EXPORT_MODULE(NativeCalljmpDevice);
   } else {
     reject(@"unsupported", @"Unsupported device check", nil);
   }
+}
+
+- (void)androidRequestIntegrityToken:(nonnull NSString *)data resolve:(nonnull RCTPromiseResolveBlock)resolve reject:(nonnull RCTPromiseRejectBlock)reject { 
+  reject(@"unsupported", @"Android integrity check is not available on iOS", nil);
 }
 
 @end

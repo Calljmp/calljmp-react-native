@@ -24,7 +24,7 @@ export class Calljmp {
     };
 
     this._store = new Store();
-    this._attestation = new Attestation();
+    this._attestation = new Attestation(config);
     this._users = new Users(finalConfig, this._attestation, this._store);
     this._project = new Project(finalConfig, this._attestation);
     this._database = new Database(finalConfig, this._store);

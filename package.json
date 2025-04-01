@@ -1,6 +1,6 @@
 {
   "name": "@calljmp/react-native",
-  "version": "0.0.10-preview",
+  "version": "0.0.11-preview",
   "description": "Calljmp SDK for React Native",
   "main": "./src/index.ts",
   "peerDependencies": {
@@ -27,7 +27,7 @@
     "type": "modules",
     "jsSrcsDir": "src/specs",
     "android": {
-      "javaPackageName": "com.calljmp.rn"
+      "javaPackageName": "com.calljmp"
     },
     "includesGeneratedCode": true
   },
@@ -51,7 +51,8 @@
         "options": {
           "cwd": ".",
           "commands": [
-            "node ./node_modules/react-native/scripts/generate-codegen-artifacts.js --path ./libs/sdk --outputPath ./libs/sdk/ios/generated/ --targetPlatform ios"
+            "node ./node_modules/react-native/scripts/generate-codegen-artifacts.js --path ./libs/sdk --outputPath ./libs/sdk/ios/generated/ --targetPlatform ios",
+            "node ./node_modules/react-native/scripts/generate-codegen-artifacts.js --path ./libs/sdk --outputPath ./libs/sdk/android/generated/ --targetPlatform android"
           ]
         }
       },
