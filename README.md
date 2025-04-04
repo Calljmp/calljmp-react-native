@@ -1,4 +1,4 @@
-# CallJMP React Native SDK
+# Calljmp React Native SDK
 
 **Secure backend-as-a-service for mobile developers. No API keys. Full SQLite control.**
 
@@ -8,9 +8,9 @@
 
 ## 🚀 Overview
 
-CallJMP is a **secure backend designed for mobile developers**, providing:
+Calljmp is a **secure backend designed for mobile developers**, providing:
 
-- ✅ **Authentication** via **App Attestation (iOS)**
+- ✅ **Authentication** via **App Attestation (iOS)** and **Play Integrity (Android)**
 - ✅ **Full SQLite database access** (no restrictions, run raw SQL)
 - ✅ **Dynamic permissions** for users & roles
 - ✅ **React Native SDK** for seamless integration
@@ -38,9 +38,9 @@ yarn add @calljmp/react-native
 
 ## 🛠️ Setup & Usage
 
-### 1️⃣ Initialize CallJMP
+### 1️⃣ Initialize Calljmp
 
-Import and initialize CallJMP in your React Native app:
+Import and initialize Calljmp in your React Native app:
 
 ```typescript
 import { Calljmp, UserAuthenticationPolicy } from '@calljmp/react-native';
@@ -50,7 +50,7 @@ const calljmp = new Calljmp();
 
 ### 2️⃣ Authenticate User
 
-Authenticate a user with CallJMP:
+Authenticate a user with Calljmp:
 
 ```typescript
 const auth = await calljmp.users.authWithEmail({
@@ -89,7 +89,7 @@ console.log(result.data);
 
 ## 🔒 Security & App Attestation
 
-CallJMP does not use API keys. Instead, it relies on App Attestation (iOS) to verify that only legitimate apps can communicate with the backend.
+Calljmp does not use API keys. Instead, it relies on App Attestation (iOS) to verify that only legitimate apps can communicate with the backend.
 
 For more details, check the [Apple App Attestations docs](https://developer.apple.com/documentation/devicecheck/establishing-your-app-s-integrity).
 
@@ -102,5 +102,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 If you have any questions or feedback:
 
 - Follow [@calljmpdev](https://x.com/calljmpdev)
-- Join the [CallJMP Discord](https://discord.gg/DHsrADPUC6)
+- Join the [Calljmp Discord](https://discord.gg/DHsrADPUC6)
 - Open an issue in the [GitHub repo](https://github.com/Calljmp/calljmp-react-native/issues)
