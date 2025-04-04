@@ -13,7 +13,7 @@ export interface Spec extends TurboModule {
   }>;
 
   androidRequestIntegrityToken(
-    cloudProjectNumber: number,
+    cloudProjectNumber: number | null,
     data: string
   ): Promise<{
     integrityToken: string;

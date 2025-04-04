@@ -1,6 +1,6 @@
 {
   "name": "@calljmp/react-native",
-  "version": "0.0.11-preview",
+  "version": "0.0.12-preview",
   "description": "Calljmp SDK for React Native",
   "main": "./src/index.ts",
   "peerDependencies": {
@@ -150,6 +150,15 @@
               "input": ".",
               "output": "."
             }
+          ]
+        }
+      },
+      "typecheck": {
+        "executor": "nx:run-commands",
+        "options": {
+          "cwd": "libs/sdk",
+          "commands": [
+            "tsc -p tsconfig.lib.json --noEmit"
           ]
         }
       }

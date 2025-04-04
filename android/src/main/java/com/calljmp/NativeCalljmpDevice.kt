@@ -16,7 +16,7 @@ class NativeCalljmpDevice(reactContext: ReactApplicationContext) :
     private val integrityManager = IntegrityManagerFactory.create(reactContext)
 
     override fun androidRequestIntegrityToken(
-        cloudProjectNumber: Double,
+        cloudProjectNumber: Double?,
         data: String,
         promise: Promise
     ) {
@@ -29,7 +29,11 @@ class NativeCalljmpDevice(reactContext: ReactApplicationContext) :
             val task = integrityManager.requestIntegrityToken(
                 IntegrityTokenRequest.builder()
                     .setNonce(nonce)
-                    .setCloudProjectNumber(cloudProjectNumber.toLong())
+                    .apply {
+                        if (cloudProjectNumber != null) {
+                            setCloudProjectNumber(cloudProjectNumber.toLong())
+                        }
+                    }
                     .build()
             )
 

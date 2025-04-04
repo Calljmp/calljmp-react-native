@@ -11,7 +11,7 @@ export class Attestation {
   }: {
     keyId?: string | null;
     android?: {
-      cloudProjectNumber: number;
+      cloudProjectNumber?: number;
     };
   } = {}) {
     this._keyId = keyId;
@@ -42,14 +42,8 @@ export class Attestation {
     }
 
     if (Platform.OS === 'android') {
-      const projectNumber = this._cloudProjectNumber;
-      if (!projectNumber) {
-        throw new Error(
-          'Cloud project number is required for Android attestation'
-        );
-      }
       return NativeDevice.androidRequestIntegrityToken(
-        projectNumber,
+        this._cloudProjectNumber,
         typeof data === 'string' ? data : JSON.stringify(data)
       );
     }

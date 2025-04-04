@@ -3,7 +3,7 @@ export interface Config {
   serviceUrl: string;
 
   android?: {
-    cloudProjectNumber: number;
+    cloudProjectNumber?: number;
   };
 
   development?: {
