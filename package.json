@@ -1,6 +1,6 @@
 {
   "name": "@calljmp/react-native",
-  "version": "0.0.12-preview",
+  "version": "0.0.13-preview",
   "description": "Calljmp SDK for React Native",
   "main": "./src/index.ts",
   "peerDependencies": {
@@ -32,17 +32,17 @@
     "includesGeneratedCode": true
   },
   "nx": {
-    "name": "sdk",
-    "sourceRoot": "libs/sdk/src",
+    "name": "sdk-react-native",
+    "sourceRoot": "libs/sdk-react-native/src",
     "projectType": "library",
     "tags": [],
     "targets": {
-      "sync-common": {
+      "common:sync": {
         "executor": "nx:run-commands",
         "options": {
           "cwd": ".",
           "commands": [
-            "rm -rf ./libs/sdk/src/common && mkdir -p ./libs/sdk/src/common && cp -r ./libs/common/src/* ./libs/sdk/src/common/"
+            "rm -rf ./libs/sdk-react-native/src/common && mkdir -p ./libs/sdk-react-native/src/common && cp -r ./libs/common/src/* ./libs/sdk-react-native/src/common/"
           ]
         }
       },
@@ -51,20 +51,20 @@
         "options": {
           "cwd": ".",
           "commands": [
-            "node ./node_modules/react-native/scripts/generate-codegen-artifacts.js --path ./libs/sdk --outputPath ./libs/sdk/ios/generated/ --targetPlatform ios",
-            "node ./node_modules/react-native/scripts/generate-codegen-artifacts.js --path ./libs/sdk --outputPath ./libs/sdk/android/generated/ --targetPlatform android"
+            "node ./node_modules/react-native/scripts/generate-codegen-artifacts.js --path ./libs/sdk-react-native --outputPath ./libs/sdk-react-native/ios/generated/ --targetPlatform ios",
+            "node ./node_modules/react-native/scripts/generate-codegen-artifacts.js --path ./libs/sdk-react-native --outputPath ./libs/sdk-react-native/android/generated/ --targetPlatform android"
           ]
         }
       },
       "publish:git": {
         "executor": "nx:run-commands",
         "dependsOn": [
-          "sync-common",
+          "common:sync",
           "codegen",
           "typecheck"
         ],
         "options": {
-          "cwd": "libs/sdk",
+          "cwd": "libs/sdk-react-native",
           "commands": [
             "./tools/git-publish.sh"
           ]
@@ -76,7 +76,7 @@
           "build"
         ],
         "options": {
-          "cwd": "libs/sdk/dist",
+          "cwd": "libs/sdk-react-native/dist",
           "commands": [
             "npm publish --access public"
           ]
@@ -88,7 +88,7 @@
           "bundle"
         ],
         "options": {
-          "cwd": "libs/sdk/dist",
+          "cwd": "libs/sdk-react-native/dist",
           "commands": [
             "../tools/package.sh"
           ]
@@ -100,14 +100,14 @@
           "{options.outputPath}"
         ],
         "dependsOn": [
-          "sync-common",
+          "common:sync",
           "codegen"
         ],
         "options": {
-          "outputPath": "libs/sdk/dist",
-          "tsConfig": "libs/sdk/tsconfig.lib.json",
-          "project": "libs/sdk/package.json",
-          "entryFile": "libs/sdk/src/index.ts",
+          "outputPath": "libs/sdk-react-native/dist",
+          "tsConfig": "libs/sdk-react-native/tsconfig.lib.json",
+          "project": "libs/sdk-react-native/package.json",
+          "entryFile": "libs/sdk-react-native/src/index.ts",
           "format": [
             "esm",
             "cjs"
@@ -121,32 +121,32 @@
           "rollupConfig": "@nx/react/plugins/bundle-rollup",
           "assets": [
             {
-              "glob": "libs/sdk/package.json",
+              "glob": "libs/sdk-react-native/package.json",
               "input": ".",
               "output": "."
             },
             {
-              "glob": "libs/sdk/README.md",
+              "glob": "libs/sdk-react-native/README.md",
               "input": ".",
               "output": "."
             },
             {
-              "glob": "libs/sdk/LICENSE",
+              "glob": "libs/sdk-react-native/LICENSE",
               "input": ".",
               "output": "."
             },
             {
-              "glob": "libs/sdk/android",
+              "glob": "libs/sdk-react-native/android",
               "input": ".",
               "output": "."
             },
             {
-              "glob": "libs/sdk/ios",
+              "glob": "libs/sdk-react-native/ios",
               "input": ".",
               "output": "."
             },
             {
-              "glob": "libs/sdk/Calljmp.podspec",
+              "glob": "libs/sdk-react-native/Calljmp.podspec",
               "input": ".",
               "output": "."
             }
@@ -156,7 +156,7 @@
       "typecheck": {
         "executor": "nx:run-commands",
         "options": {
-          "cwd": "libs/sdk",
+          "cwd": "libs/sdk-react-native",
           "commands": [
             "tsc -p tsconfig.lib.json --noEmit"
           ]

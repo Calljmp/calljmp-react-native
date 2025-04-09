@@ -74,7 +74,7 @@ RCT_EXPORT_MODULE(NativeCalljmpDevice);
   }
 }
 
-- (void)androidRequestIntegrityToken:(nonnull NSString *)data resolve:(nonnull RCTPromiseResolveBlock)resolve reject:(nonnull RCTPromiseRejectBlock)reject { 
+- (void)androidRequestIntegrityToken:(nonnull NSNumber *)cloudProjectNumber data:(nonnull NSString *)data resolve:(nonnull RCTPromiseResolveBlock)resolve reject:(nonnull RCTPromiseRejectBlock)reject { 
   reject(@"unsupported", @"Android integrity check is not available on iOS", nil);
 }
 
