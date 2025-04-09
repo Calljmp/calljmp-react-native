@@ -89,9 +89,9 @@ console.log(result.data);
 
 ## 🔒 Security & App Attestation
 
-Calljmp does not use API keys. Instead, it relies on App Attestation (iOS) to verify that only legitimate apps can communicate with the backend.
+Calljmp does not use API keys. Instead, it relies on App Attestation (iOS) and Play Integrity (Android) to verify that only legitimate apps can communicate with the backend.
 
-For more details, check the [Apple App Attestations docs](https://developer.apple.com/documentation/devicecheck/establishing-your-app-s-integrity).
+For more details, check the [Apple App Attestations docs](https://developer.apple.com/documentation/devicecheck/establishing-your-app-s-integrity) and/or [Google Play Integrity docs](https://developer.android.com/google/play/integrity).
 
 ## 📄 License
 
