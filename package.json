@@ -1,6 +1,6 @@
 {
   "name": "@calljmp/react-native",
-  "version": "0.0.14-preview",
+  "version": "0.0.15-preview",
   "description": "Calljmp SDK for React Native",
   "main": "./src/index.ts",
   "peerDependencies": {

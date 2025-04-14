@@ -87,6 +87,44 @@ if (result.error) {
 console.log(result.data);
 ```
 
+### 4️⃣ Access service
+
+If you are deploying your own service, you can access it via the `service` property.
+
+```typescript
+// ./src/services/main.ts
+
+import { Service } from './service';
+
+const service = Service();
+
+service.get('/hello', async c => {
+  return c.json({
+    message: 'Hello, world!',
+  });
+});
+
+export default service;
+```
+
+then in your React Native app, you can call the service like this:
+
+```typescript
+// ./src/app/App.tsx
+
+const result = await calljmp.service
+  .request('/hello')
+  .get()
+  .json<{ message: string }>();
+
+if (result.error) {
+  console.error(result.error);
+  return;
+}
+
+console.log(result.data);
+```
+
 ## 🔒 Security & App Attestation
 
 Calljmp does not use API keys. Instead, it relies on App Attestation (iOS) and Play Integrity (Android) to verify that only legitimate apps can communicate with the backend.
