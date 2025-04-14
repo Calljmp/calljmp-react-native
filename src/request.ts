@@ -88,14 +88,14 @@ type JsonLike<T> = unknown extends T
       [P in keyof T]: T[P] extends JsonValue
         ? T[P]
         : T[P] extends NotJsonValue
-        ? never
-        : JsonLike<T[P]>;
+          ? never
+          : JsonLike<T[P]>;
     };
 
 export type HttpRequestBody = JsonValue;
 
 export class HttpRequest {
-  private _url: string;
+  private _url: Promise<string>;
   private _method: HttpMethod;
   private _params?: Record<
     string,
@@ -105,8 +105,8 @@ export class HttpRequest {
   private _body?: HttpRequestBody;
   private _middlewares: HttpRequestMiddleware[] = [];
 
-  constructor(url: string) {
-    this._url = url;
+  constructor(url: string | Promise<string>) {
+    this._url = typeof url === 'string' ? Promise.resolve(url) : url;
     this._method = 'GET';
   }
 
@@ -151,8 +151,9 @@ export class HttpRequest {
       }
     }
 
+    const requestUrl = await request._url;
     const paramsString = params.toString();
-    const url = `${request._url}${
+    const url = `${requestUrl}${
       paramsString.length > 0 ? `?${paramsString}` : ''
     }`;
     const body = (() => {
@@ -219,6 +220,6 @@ export class HttpRequest {
   }
 }
 
-export function request(url: string) {
+export function request(url: string | Promise<string>) {
   return new HttpRequest(url);
 }
