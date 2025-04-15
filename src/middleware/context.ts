@@ -7,9 +7,12 @@ export function context(config: Config) {
     request: HttpRequest,
     next: (request: HttpRequest) => Promise<HttpResponse>
   ): Promise<HttpResponse> => {
-    request.header('X-Platform', Platform.OS);
+    request.header('X-Calljmp-Platform', Platform.OS);
     if (config.development?.enabled && config.development?.apiToken) {
-      request.header('X-Development-Api-Token', config.development.apiToken);
+      request.header(
+        'X-Calljmp-Development-Api-Token',
+        config.development.apiToken
+      );
     }
     return next(request);
   };
