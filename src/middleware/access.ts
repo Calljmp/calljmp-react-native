@@ -10,6 +10,14 @@ export function access(store: Store) {
     if (accessToken) {
       request.header('Authorization', `Bearer ${accessToken}`);
     }
-    return next(request);
+
+    const response = await next(request);
+
+    const refreshAccessToken = response.header('X-Calljmp-Access-Token');
+    if (refreshAccessToken) {
+      await store.securePut('accessToken', refreshAccessToken);
+    }
+
+    return response;
   };
 }

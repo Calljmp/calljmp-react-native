@@ -13,6 +13,10 @@ export class HttpResponse {
     return this._response.headers;
   }
 
+  header(name: string): string | null {
+    return this._response.headers.get(name);
+  }
+
   get status(): number {
     return this._response.status;
   }
