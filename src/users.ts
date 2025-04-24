@@ -41,6 +41,8 @@ export class Users {
   }: {
     challengeToken?: string;
     email: string;
+    emailVerified?: boolean;
+    name?: string;
     password?: string;
     tags?: string[];
     policy?: UserAuthenticationPolicy;
@@ -59,7 +61,7 @@ export class Users {
 
     const attest = await this._attestation
       .attest({ token: challengeToken })
-      .catch((e) => {
+      .catch(e => {
         console.warn(
           'Failed to attest, this is a fatal error unless it is in development mode on simulator.',
           e
