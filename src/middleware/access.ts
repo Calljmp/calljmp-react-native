@@ -1,12 +1,12 @@
 import { HttpRequest, HttpResponse } from '../request';
-import { Store } from '../store';
+import { SecureStore } from '../secure-store';
 
-export function access(store: Store) {
+export function access(store: SecureStore) {
   return async (
     request: HttpRequest,
     next: (request: HttpRequest) => Promise<HttpResponse>
   ): Promise<HttpResponse> => {
-    const accessToken = await store.secureGet('accessToken');
+    const accessToken = await store.get('accessToken');
     if (accessToken) {
       request.header('Authorization', `Bearer ${accessToken}`);
     }
@@ -15,7 +15,7 @@ export function access(store: Store) {
 
     const refreshAccessToken = response.header('X-Calljmp-Access-Token');
     if (refreshAccessToken) {
-      await store.securePut('accessToken', refreshAccessToken);
+      await store.put('accessToken', refreshAccessToken);
     }
 
     return response;

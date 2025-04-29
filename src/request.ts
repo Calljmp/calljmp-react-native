@@ -66,7 +66,7 @@ export class HttpResult {
     return await response.buffer();
   }
 
-  async json<T = Record<string, unknown>>() {
+  async json<T extends Record<string, unknown> = {}>() {
     const response = await this.call();
     return await response.json<T>();
   }

@@ -1,5 +1,5 @@
 import { Attestation } from './attestation';
-import { Store } from './store';
+import { SecureStore } from './secure-store';
 import { Users } from './users';
 import { Config } from './config';
 import { Project } from './project';
@@ -8,13 +8,11 @@ import { Service } from './service';
 import { Integrity } from './integrity';
 
 export class Calljmp {
-  private _project: Project;
-  private _attestation: Attestation;
-  private _store: Store;
-  private _users: Users;
-  private _database: Database;
-  private _service: Service;
-  private _integrity: Integrity;
+  public readonly project: Project;
+  public readonly users: Users;
+  public readonly database: Database;
+  public readonly service: Service;
+  public readonly integrity: Integrity;
 
   constructor(config: Partial<Config> = {}) {
     const baseUrl =
@@ -27,28 +25,13 @@ export class Calljmp {
       ...config,
     };
 
-    this._store = new Store();
-    this._attestation = new Attestation(config);
-    this._integrity = new Integrity(finalConfig, this._attestation);
-    this._users = new Users(finalConfig, this._attestation, this._store);
-    this._project = new Project(finalConfig, this._attestation);
-    this._database = new Database(finalConfig, this._store);
-    this._service = new Service(finalConfig, this._integrity, this._store);
-  }
+    const store = new SecureStore();
+    const attestation = new Attestation(config);
 
-  get service() {
-    return this._service;
-  }
-
-  get users() {
-    return this._users;
-  }
-
-  get project() {
-    return this._project;
-  }
-
-  get database() {
-    return this._database;
+    this.integrity = new Integrity(finalConfig, attestation, store);
+    this.users = new Users(finalConfig, attestation, store);
+    this.project = new Project(finalConfig, attestation);
+    this.database = new Database(finalConfig, store);
+    this.service = new Service(finalConfig, this.integrity, store);
   }
 }

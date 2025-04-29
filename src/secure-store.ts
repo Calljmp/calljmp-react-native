@@ -2,12 +2,12 @@ import NativeStore from './specs/NativeCalljmpStore';
 
 export type StoreKey = 'accessToken';
 
-export class Store {
+export class SecureStore {
   private _cache: Record<StoreKey, string | null | undefined> = {
     accessToken: undefined,
   };
 
-  async securePut(key: StoreKey, value: string | null) {
+  async put(key: StoreKey, value: string | null) {
     this._cache[key] = value;
     if (value === null) {
       return await NativeStore.secureDelete(key);
@@ -15,11 +15,11 @@ export class Store {
     return await NativeStore.securePut(key, value);
   }
 
-  async secureDelete(key: StoreKey) {
-    return this.securePut(key, null);
+  async delete(key: StoreKey) {
+    return this.put(key, null);
   }
 
-  async secureGet(key: StoreKey): Promise<string | null> {
+  async get(key: StoreKey): Promise<string | null> {
     const cachedValue = this._cache[key];
     if (cachedValue === undefined) {
       const value = await NativeStore.secureGet(key);

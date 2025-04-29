@@ -1,10 +1,10 @@
-import { decodeAccessToken } from './access';
+import { AccessToken } from './access';
 import { Config } from './config';
 import { Integrity } from './integrity';
 import { access } from './middleware/access';
 import { context } from './middleware/context';
 import { request } from './request';
-import { Store } from './store';
+import { SecureStore } from './secure-store';
 
 export class Service {
   private _serviceId: string | null;
@@ -12,26 +12,54 @@ export class Service {
   constructor(
     private _config: Config,
     private _integrity: Integrity,
-    private _store: Store
+    private _store: SecureStore
   ) {
     this._serviceId = _config.service?.serviceId ?? null;
   }
 
-  private async _maybeAccess() {
-    const accessToken = await this._store.secureGet('accessToken');
-    if (!accessToken) {
-      const result = await this._integrity.access();
-      if (result.error) {
-        return result;
+  private async _resolveAccess() {
+    let token = await this._store.get('accessToken');
+    if (token) {
+      const { data: accessToken } = AccessToken.tryParse(token);
+      if (accessToken && accessToken.isValid) {
+        return {
+          data: accessToken,
+          error: undefined,
+        };
       }
-      await this._store.securePut('accessToken', result.data.accessToken);
+      await this._store.delete('accessToken');
+    }
+
+    const result = await this._integrity.access();
+    if (result.error) {
+      return result;
+    }
+
+    token = await this._store.get('accessToken');
+    if (!token) {
       return {
-        data: result.data,
-        error: undefined,
+        data: undefined,
+        error: new Error('Failed to get access token'),
       };
     }
+
+    const { data: accessToken, error } = AccessToken.tryParse(token);
+    if (!accessToken || error) {
+      return {
+        data: undefined,
+        error: new Error('Failed to parse access token', { cause: error }),
+      };
+    }
+
+    if (accessToken.isExpired) {
+      return {
+        data: undefined,
+        error: new Error('Access token is expired'),
+      };
+    }
+
     return {
-      data: { accessToken },
+      data: accessToken,
       error: undefined,
     };
   }
@@ -45,19 +73,18 @@ export class Service {
         error: undefined,
       };
     }
-    const accessResult = await this._maybeAccess();
-    if (accessResult.error) {
-      return accessResult;
+    const access = await this._resolveAccess();
+    if (access.error) {
+      return access;
     }
     try {
-      const { serviceUuid } = decodeAccessToken(accessResult.data.accessToken);
-      if (!serviceUuid) {
+      if (!access.data.serviceUuid) {
         throw new Error('Service is not configured');
       }
-      this._serviceId = serviceUuid;
+      this._serviceId = access.data.serviceUuid;
       return {
         data: {
-          id: serviceUuid,
+          id: access.data.serviceUuid,
         },
         error: undefined,
       };
@@ -91,12 +118,12 @@ export class Service {
   }
 
   async accessToken() {
-    const result = await this._maybeAccess();
-    if (result.error) {
-      return result;
+    const access = await this._resolveAccess();
+    if (access.error) {
+      return access;
     }
     return {
-      data: result.data.accessToken,
+      data: access.data,
       error: undefined,
     };
   }
