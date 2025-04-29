@@ -53,8 +53,9 @@ const calljmp = new Calljmp();
 Authenticate a user with Calljmp:
 
 ```typescript
-const auth = await calljmp.users.authWithEmail({
+const auth = await calljmp.users.auth.email.authenticate({
   email: 'test@email.com',
+  name: 'Tester',
   password: 'password',
   policy: UserAuthenticationPolicy.SignInOrCreate,
   tags: ['role:member'],

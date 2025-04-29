@@ -1,3 +1,4 @@
+import { AccessToken } from '../access';
 import { Attestation } from '../attestation';
 import {
   UserAuthenticationPolicy,
@@ -17,6 +18,17 @@ export class Email {
     private _store: SecureStore,
     private _auth: Auth
   ) {}
+
+  async authenticated() {
+    const token = await this._store.get('accessToken');
+    if (token) {
+      const { data: accessToken } = AccessToken.tryParse(token);
+      if (accessToken) {
+        return accessToken.isValid && accessToken.userId !== null;
+      }
+    }
+    return false;
+  }
 
   async verify(args: {
     email?: string;
