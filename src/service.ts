@@ -7,15 +7,11 @@ import { request } from './request';
 import { SecureStore } from './secure-store';
 
 export class Service {
-  private _serviceId: string | null;
-
   constructor(
     private _config: Config,
     private _integrity: Integrity,
     private _store: SecureStore
-  ) {
-    this._serviceId = _config.service?.serviceId ?? null;
-  }
+  ) {}
 
   private async _resolveAccess() {
     let token = await this._store.get('accessToken');
@@ -64,38 +60,6 @@ export class Service {
     };
   }
 
-  async id() {
-    if (this._serviceId) {
-      return {
-        data: {
-          id: this._serviceId,
-        },
-        error: undefined,
-      };
-    }
-    const access = await this._resolveAccess();
-    if (access.error) {
-      return access;
-    }
-    try {
-      if (!access.data.serviceUuid) {
-        throw new Error('Service is not configured');
-      }
-      this._serviceId = access.data.serviceUuid;
-      return {
-        data: {
-          id: access.data.serviceUuid,
-        },
-        error: undefined,
-      };
-    } catch (error) {
-      return {
-        data: undefined,
-        error: new Error('Failed to decode access token', { cause: error }),
-      };
-    }
-  }
-
   async url() {
     if (this._config.development?.enabled && this._config.service?.baseUrl) {
       return {
@@ -105,13 +69,9 @@ export class Service {
         error: undefined,
       };
     }
-    const serviceId = await this.id();
-    if (serviceId.error) {
-      return serviceId;
-    }
     return {
       data: {
-        url: `${this._config.serviceUrl}/service/${serviceId.data.id}`,
+        url: `${this._config.serviceUrl}/service`,
       },
       error: undefined,
     };

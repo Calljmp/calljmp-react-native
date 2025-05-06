@@ -3,7 +3,6 @@ export interface Config {
   serviceUrl: string;
 
   service?: {
-    serviceId?: string;
     baseUrl?: string;
   };
 
