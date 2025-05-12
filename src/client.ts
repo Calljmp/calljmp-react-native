@@ -6,6 +6,7 @@ import { Project } from './project';
 import { Database } from './database';
 import { Service } from './service';
 import { Integrity } from './integrity';
+import { Storage } from './storage';
 
 export class Calljmp {
   public readonly project: Project;
@@ -13,6 +14,7 @@ export class Calljmp {
   public readonly database: Database;
   public readonly service: Service;
   public readonly integrity: Integrity;
+  public readonly storage: Storage;
 
   constructor(config: Partial<Config> = {}) {
     const baseUrl =
@@ -33,5 +35,6 @@ export class Calljmp {
     this.project = new Project(finalConfig, attestation);
     this.database = new Database(finalConfig, store);
     this.service = new Service(finalConfig, this.integrity, store);
+    this.storage = new Storage(finalConfig, store);
   }
 }

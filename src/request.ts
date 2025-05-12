@@ -44,6 +44,10 @@ export class HttpResponse {
     }
     return { data: json, error: undefined };
   }
+
+  async blob(): Promise<Blob> {
+    return this._response.blob();
+  }
 }
 
 export class HttpResult {
@@ -69,6 +73,11 @@ export class HttpResult {
   async json<T extends Record<string, unknown> = {}>() {
     const response = await this.call();
     return await response.json<T>();
+  }
+
+  async blob() {
+    const response = await this.call();
+    return await response.blob();
   }
 }
 
@@ -161,13 +170,16 @@ export class HttpRequest {
       paramsString.length > 0 ? `?${paramsString}` : ''
     }`;
     const body = (() => {
-      if (
+      if (request._body instanceof FormData) {
+        return request._body;
+      } else if (
         request._body &&
         request._headers?.['Content-Type'] === 'application/json'
       ) {
         return JSON.stringify(request._body);
+      } else {
+        return undefined;
       }
-      return undefined;
     })();
 
     const response = await fetch(url, {
@@ -196,20 +208,24 @@ export class HttpRequest {
   post<T>(data: HttpRequestBody | JsonLike<T> = {}): HttpResult {
     this._method = 'POST';
     this._body = data;
-    this._headers = {
-      ...this._headers,
-      'Content-Type': 'application/json',
-    };
+    if (!(data instanceof FormData)) {
+      this._headers = {
+        ...this._headers,
+        'Content-Type': 'application/json',
+      };
+    }
     return new HttpResult(this._call());
   }
 
   put<T>(data: HttpRequestBody | JsonLike<T> = {}): HttpResult {
     this._method = 'PUT';
     this._body = data;
-    this._headers = {
-      ...this._headers,
-      'Content-Type': 'application/json',
-    };
+    if (!(data instanceof FormData)) {
+      this._headers = {
+        ...this._headers,
+        'Content-Type': 'application/json',
+      };
+    }
     return new HttpResult(this._call());
   }
 
