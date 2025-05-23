@@ -2,6 +2,11 @@ import { Platform } from 'react-native';
 import { Config } from '../config';
 import { HttpRequest, HttpResponse } from '../request';
 
+/**
+ * Middleware that attaches platform and development headers to outgoing requests.
+ * @param config SDK configuration
+ * @returns Middleware function for HTTP requests
+ */
 export function context(config: Config) {
   return async (
     request: HttpRequest,

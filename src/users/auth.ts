@@ -11,7 +11,16 @@ import { context } from '../middleware/context';
 import { request } from '../request';
 import { SecureStore } from '../secure-store';
 
+/**
+ * Provides email-based authentication methods for users.
+ */
 export class Email {
+  /**
+   * @param _config SDK configuration
+   * @param _attestation Device attestation provider
+   * @param _store Secure storage for tokens
+   * @param _auth Auth instance
+   */
   constructor(
     private _config: Config,
     private _attestation: Attestation,
@@ -19,6 +28,10 @@ export class Email {
     private _auth: Auth
   ) {}
 
+  /**
+   * Checks if the user is authenticated via email.
+   * @returns True if authenticated, false otherwise
+   */
   async authenticated() {
     const token = await this._store.get('accessToken');
     if (token) {
@@ -30,6 +43,11 @@ export class Email {
     return false;
   }
 
+  /**
+   * Initiates email verification for authentication.
+   * @param args Verification arguments (email, provider, doNotNotify)
+   * @returns Challenge token and user existence flag
+   */
   async verify(args: {
     email?: string;
     provider: UserAuthenticationProvider;
@@ -44,6 +62,11 @@ export class Email {
       }>();
   }
 
+  /**
+   * Confirms email verification with a challenge token.
+   * @param args Confirmation arguments (email, challengeToken)
+   * @returns Confirmation result
+   */
   async confirm(args: { email?: string; challengeToken: string }) {
     return request(`${this._config.serviceUrl}/users/auth/email/confirm`)
       .use(context(this._config), access(this._store))
@@ -54,6 +77,11 @@ export class Email {
       .json<{ existingUser: boolean }>();
   }
 
+  /**
+   * Initiates the password reset process for the given email.
+   * @param args Email address and notification preference
+   * @returns Challenge token for password reset
+   */
   async forgotPassword(
     args: {
       email?: string;
@@ -66,6 +94,11 @@ export class Email {
       .json<{ challengeToken: string }>();
   }
 
+  /**
+   * Resets the password using the provided challenge token.
+   * @param args Email, new password, challenge token, and notification preference
+   * @returns Success or failure of the password reset
+   */
   async resetPassword(args: {
     email?: string;
     password: string;
@@ -81,6 +114,11 @@ export class Email {
       .json();
   }
 
+  /**
+   * Authenticates the user with email and password.
+   * @param args Email, password, and optional parameters like challengeToken, name, tags, and policy
+   * @returns Access token and user information
+   */
   async authenticate({
     challengeToken,
     ...args
@@ -143,6 +181,11 @@ export class Email {
 export class Auth {
   public readonly email: Email;
 
+  /**
+   * @param _config SDK configuration
+   * @param attestation Device attestation provider
+   * @param _store Secure storage for tokens
+   */
   constructor(
     private _config: Config,
     attestation: Attestation,
@@ -151,6 +194,10 @@ export class Auth {
     this.email = new Email(_config, attestation, _store, this);
   }
 
+  /**
+   * Requests a new authentication challenge token from the backend.
+   * @returns An object containing the challenge token.
+   */
   async challenge() {
     return request(`${this._config.serviceUrl}/users/auth/challenge`)
       .use(context(this._config))
@@ -158,6 +205,10 @@ export class Auth {
       .json<{ challengeToken: string }>();
   }
 
+  /**
+   * Clears the stored access token, effectively logging the user out.
+   * @returns A promise that resolves when the token is deleted.
+   */
   async clear() {
     await this._store.delete('accessToken');
   }

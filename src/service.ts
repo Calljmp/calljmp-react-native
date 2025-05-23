@@ -6,13 +6,25 @@ import { context } from './middleware/context';
 import { request } from './request';
 import { SecureStore } from './secure-store';
 
+/**
+ * Provides access to backend service APIs, including access token management.
+ */
 export class Service {
+  /**
+   * @param _config SDK configuration
+   * @param _integrity Device integrity provider
+   * @param _store Secure storage for tokens
+   */
   constructor(
     private _config: Config,
     private _integrity: Integrity,
     private _store: SecureStore
   ) {}
 
+  /**
+   * Resolves and returns a valid access token, refreshing if needed.
+   * @returns Access token data and error (if any)
+   */
   private async _resolveAccess() {
     let token = await this._store.get('accessToken');
     if (token) {
@@ -60,6 +72,12 @@ export class Service {
     };
   }
 
+  /**
+   * Returns the service URL based on the current configuration.
+   * If development mode is enabled and a baseUrl is set, returns that.
+   * Otherwise, returns the default service URL.
+   * @returns An object containing the URL and an optional error.
+   */
   async url() {
     if (this._config.development?.enabled && this._config.service?.baseUrl) {
       return {
@@ -77,6 +95,10 @@ export class Service {
     };
   }
 
+  /**
+   * Retrieves a valid access token, refreshing it if necessary.
+   * @returns An object containing the access token and an optional error.
+   */
   async accessToken() {
     const access = await this._resolveAccess();
     if (access.error) {
@@ -88,6 +110,11 @@ export class Service {
     };
   }
 
+  /**
+   * Creates a request object for the given route, applying context and access middleware.
+   * @param route The API route (default is '/').
+   * @returns A request object with middleware applied.
+   */
   request(route = '/') {
     return request(
       this.url().then(result => {

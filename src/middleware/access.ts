@@ -1,6 +1,12 @@
 import { HttpRequest, HttpResponse } from '../request';
 import { SecureStore } from '../secure-store';
 
+/**
+ * Middleware that attaches the access token to outgoing requests and
+ * updates the stored access token if a new one is received in the response.
+ * @param store SecureStore instance for token management
+ * @returns Middleware function for HTTP requests
+ */
 export function access(store: SecureStore) {
   return async (
     request: HttpRequest,
