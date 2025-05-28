@@ -137,7 +137,7 @@ export class HttpResult {
 /**
  * Supported HTTP methods for requests.
  */
-export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE';
+export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD';
 
 /**
  * Middleware function for HTTP requests.
@@ -302,13 +302,7 @@ export class HttpRequest {
     return next(this);
   }
 
-  /**
-   * Sends a POST request with the given data.
-   * @param data The request body data.
-   * @returns An HttpResult for the request.
-   */
-  post<T>(data: HttpRequestBody | JsonLike<T> = {}): HttpResult {
-    this._method = 'POST';
+  private _withBody<T>(data: HttpRequestBody | JsonLike<T>): HttpRequest {
     this._body = data;
     if (!(data instanceof FormData)) {
       this._headers = {
@@ -316,7 +310,17 @@ export class HttpRequest {
         'Content-Type': 'application/json',
       };
     }
-    return new HttpResult(this._call());
+    return this;
+  }
+
+  /**
+   * Sends a POST request with the given data.
+   * @param data The request body data.
+   * @returns An HttpResult for the request.
+   */
+  post<T>(data: HttpRequestBody | JsonLike<T> = {}): HttpResult {
+    this._method = 'POST';
+    return new HttpResult(this._withBody(data)._call());
   }
 
   /**
@@ -326,14 +330,17 @@ export class HttpRequest {
    */
   put<T>(data: HttpRequestBody | JsonLike<T> = {}): HttpResult {
     this._method = 'PUT';
-    this._body = data;
-    if (!(data instanceof FormData)) {
-      this._headers = {
-        ...this._headers,
-        'Content-Type': 'application/json',
-      };
-    }
-    return new HttpResult(this._call());
+    return new HttpResult(this._withBody(data)._call());
+  }
+
+  /**
+   * Sends a PATCH request with the given data.
+   * @param data The request body data.
+   * @returns An HttpResult for the request.
+   */
+  patch<T>(data: HttpRequestBody | JsonLike<T> = {}): HttpResult {
+    this._method = 'PATCH';
+    return new HttpResult(this._withBody(data)._call());
   }
 
   /**
@@ -351,6 +358,15 @@ export class HttpRequest {
    */
   get(): HttpResult {
     this._method = 'GET';
+    return new HttpResult(this._call());
+  }
+
+  /**
+   * Sends a HEAD request.
+   * @returns An HttpResult for the request.
+   */
+  head(): HttpResult {
+    this._method = 'HEAD';
     return new HttpResult(this._call());
   }
 }

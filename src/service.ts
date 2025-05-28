@@ -78,7 +78,7 @@ export class Service {
    * Otherwise, returns the default service URL.
    * @returns An object containing the URL and an optional error.
    */
-  async url() {
+  get url() {
     if (this._config.development?.enabled && this._config.service?.baseUrl) {
       return {
         data: {
@@ -116,14 +116,10 @@ export class Service {
    * @returns A request object with middleware applied.
    */
   request(route = '/') {
-    return request(
-      this.url().then(result => {
-        if (result.error) {
-          throw result.error;
-        }
-        const sanitizedRoute = route.replace(/^\//, '');
-        return `${result.data.url}/${sanitizedRoute}`;
-      })
-    ).use(context(this._config), access(this._store));
+    const sanitizedRoute = route.replace(/^\//, '');
+    return request(`${this.url}/${sanitizedRoute}`).use(
+      context(this._config),
+      access(this._store)
+    );
   }
 }
