@@ -1,3 +1,67 @@
+/**
+ * @fileoverview User authentication functionality for the Calljmp SDK.
+ *
+ * This module provides comprehensive user authentication capabilities including:
+ * - Email-based authentication with verification
+ * - Password management (reset/change)
+ * - Challenge-response authentication flow
+ * - Secure token storage and management
+ * - Device attestation integration
+ *
+ * The authentication system uses a challenge-response pattern combined with
+ * device attestation to ensure secure user authentication. Email verification
+ * is used for account validation and password recovery.
+ *
+ * @example Basic email authentication
+ * ```typescript
+ * const auth = new Auth(config, attestation, secureStore);
+ *
+ * // Start email verification
+ * const { data: verifyResult } = await auth.email.verify({
+ *   email: 'user@example.com',
+ *   provider: 'email'
+ * });
+ *
+ * // User enters verification code, then authenticate
+ * const { data: user, error } = await auth.email.authenticate({
+ *   email: 'user@example.com',
+ *   password: 'userPassword',
+ *   challengeToken: verifyResult.challengeToken
+ * });
+ *
+ * if (error) {
+ *   console.error('Authentication failed:', error.message);
+ * } else {
+ *   console.log('User authenticated:', user);
+ * }
+ * ```
+ *
+ * @example Password reset flow
+ * ```typescript
+ * // Initiate password reset
+ * const { data: resetData } = await auth.email.forgotPassword({
+ *   email: 'user@example.com'
+ * });
+ *
+ * // User receives email with code, then reset password
+ * const { error } = await auth.email.resetPassword({
+ *   email: 'user@example.com',
+ *   password: 'newPassword',
+ *   challengeToken: resetData.challengeToken
+ * });
+ * ```
+ *
+ * @example Check authentication status
+ * ```typescript
+ * const isAuthenticated = await auth.email.authenticated();
+ * if (!isAuthenticated) {
+ *   // Redirect to login
+ * }
+ * ```
+ *
+ * @public
+ */
+
 import { AccessToken } from '../access';
 import { Attestation } from '../attestation';
 import {
@@ -12,14 +76,56 @@ import { request } from '../request';
 import { SecureStore } from '../secure-store';
 
 /**
- * Provides email-based authentication methods for users.
+ * Provides email-based authentication methods for user registration and login.
+ *
+ * The Email class handles the complete email authentication flow including:
+ * - Email verification for new and existing users
+ * - Password-based authentication with device attestation
+ * - Password reset and recovery
+ * - Authentication status checking
+ *
+ * All operations integrate with device attestation for enhanced security
+ * and use secure storage for token management.
+ *
+ * @example Complete authentication flow
+ * ```typescript
+ * const emailAuth = auth.email;
+ *
+ * // Check if already authenticated
+ * if (await emailAuth.authenticated()) {
+ *   console.log('User already logged in');
+ *   return;
+ * }
+ *
+ * // Start verification for new/existing user
+ * const { data: verifyResult } = await emailAuth.verify({
+ *   email: 'user@example.com',
+ *   provider: 'email'
+ * });
+ *
+ * console.log('Existing user:', verifyResult.existingUser);
+ *
+ * // User enters verification code and password
+ * const { data: user, error } = await emailAuth.authenticate({
+ *   email: 'user@example.com',
+ *   password: 'userPassword',
+ *   challengeToken: verifyResult.challengeToken,
+ *   name: verifyResult.existingUser ? undefined : 'User Name'
+ * });
+ * ```
+ *
+ * @public
  */
 export class Email {
   /**
-   * @param _config SDK configuration
-   * @param _attestation Device attestation provider
-   * @param _store Secure storage for tokens
-   * @param _auth Auth instance
+   * Creates a new Email authentication instance.
+   *
+   * @param _config - SDK configuration containing service URLs and settings
+   * @param _attestation - Device attestation provider for security verification
+   * @param _store - Secure storage for access tokens and sensitive data
+   * @param _auth - Parent Auth instance for challenge token generation
+   *
+   * @internal
    */
   constructor(
     private _config: Config,
@@ -29,8 +135,25 @@ export class Email {
   ) {}
 
   /**
-   * Checks if the user is authenticated via email.
-   * @returns True if authenticated, false otherwise
+   * Checks if the current user is authenticated via email.
+   *
+   * Verifies authentication by checking for a valid, non-expired access token
+   * in secure storage. The token must be associated with a specific user ID.
+   *
+   * @returns Promise resolving to true if authenticated, false otherwise
+   *
+   * @example
+   * ```typescript
+   * if (await auth.email.authenticated()) {
+   *   // User is logged in, proceed with authenticated operations
+   *   console.log('User is authenticated');
+   * } else {
+   *   // Redirect to login screen
+   *   showLoginScreen();
+   * }
+   * ```
+   *
+   * @public
    */
   async authenticated() {
     const token = await this._store.get('accessToken');
@@ -44,9 +167,41 @@ export class Email {
   }
 
   /**
-   * Initiates email verification for authentication.
-   * @param args Verification arguments (email, provider, doNotNotify)
-   * @returns Challenge token and user existence flag
+   * Initiates email verification for user authentication.
+   *
+   * Starts the email verification process by sending a verification code to the
+   * specified email address. This is the first step in the authentication flow
+   * for both new user registration and existing user login.
+   *
+   * @param args - Verification parameters
+   * @param args.email - Email address to verify (optional if previously set)
+   * @param args.provider - Authentication provider type
+   * @param args.doNotNotify - If true, suppresses email notification
+   * @returns Promise resolving to challenge token and user existence status
+   *
+   * @example New user registration
+   * ```typescript
+   * const { data, error } = await auth.email.verify({
+   *   email: 'newuser@example.com',
+   *   provider: 'email'
+   * });
+   *
+   * if (error) {
+   *   console.error('Verification failed:', error.message);
+   * } else {
+   *   console.log('Challenge token:', data.challengeToken);
+   *   console.log('Existing user:', data.existingUser);
+   *
+   *   // Show appropriate UI based on existingUser flag
+   *   if (data.existingUser) {
+   *     showPasswordInput();
+   *   } else {
+   *     showRegistrationForm();
+   *   }
+   * }
+   * ```
+   *
+   * @public
    */
   async verify(args: {
     email?: string;
@@ -63,9 +218,42 @@ export class Email {
   }
 
   /**
-   * Confirms email verification with a challenge token.
-   * @param args Confirmation arguments (email, challengeToken)
-   * @returns Confirmation result
+   * Confirms email verification using the challenge token.
+   *
+   * Validates the email verification code entered by the user. This step
+   * confirms that the user has access to the specified email address.
+   *
+   * @param args - Confirmation parameters
+   * @param args.email - Email address being verified (optional if previously set)
+   * @param args.challengeToken - Challenge token received from verification step
+   * @returns Promise resolving to confirmation result with user existence status
+   *
+   * @example
+   * ```typescript
+   * // User enters verification code received via email
+   * const verificationCode = getUserInput();
+   *
+   * const { data, error } = await auth.email.confirm({
+   *   email: 'user@example.com',
+   *   challengeToken: verificationCode
+   * });
+   *
+   * if (error) {
+   *   console.error('Invalid verification code:', error.message);
+   * } else {
+   *   console.log('Email verified successfully');
+   *   console.log('Existing user:', data.existingUser);
+   *
+   *   // Proceed to password step
+   *   if (data.existingUser) {
+   *     showPasswordLogin();
+   *   } else {
+   *     showPasswordSetup();
+   *   }
+   * }
+   * ```
+   *
+   * @public
    */
   async confirm(args: { email?: string; challengeToken: string }) {
     return request(`${this._config.serviceUrl}/users/auth/email/confirm`)
@@ -78,9 +266,35 @@ export class Email {
   }
 
   /**
-   * Initiates the password reset process for the given email.
-   * @param args Email address and notification preference
-   * @returns Challenge token for password reset
+   * Initiates the password reset process for a user account.
+   *
+   * Sends a password reset email with a challenge token that can be used
+   * to reset the user's password. The user will receive an email with
+   * instructions and a verification code.
+   *
+   * @param args - Password reset parameters (optional)
+   * @param args.email - Email address for password reset (optional if previously set)
+   * @param args.doNotNotify - If true, suppresses email notification
+   * @returns Promise resolving to challenge token for password reset
+   *
+   * @example
+   * ```typescript
+   * const { data, error } = await auth.email.forgotPassword({
+   *   email: 'user@example.com'
+   * });
+   *
+   * if (error) {
+   *   console.error('Password reset failed:', error.message);
+   * } else {
+   *   console.log('Password reset email sent');
+   *   console.log('Challenge token:', data.challengeToken);
+   *
+   *   // Show form for user to enter reset code and new password
+   *   showPasswordResetForm(data.challengeToken);
+   * }
+   * ```
+   *
+   * @public
    */
   async forgotPassword(
     args: {
@@ -95,9 +309,40 @@ export class Email {
   }
 
   /**
-   * Resets the password using the provided challenge token.
-   * @param args Email, new password, challenge token, and notification preference
-   * @returns Success or failure of the password reset
+   * Resets the user's password using a challenge token from the reset email.
+   *
+   * Completes the password reset process by validating the challenge token
+   * and setting a new password for the user account.
+   *
+   * @param args - Password reset parameters
+   * @param args.email - Email address (optional if previously set)
+   * @param args.password - New password to set
+   * @param args.challengeToken - Challenge token from password reset email
+   * @param args.doNotNotify - If true, suppresses confirmation email
+   * @returns Promise resolving to success/failure result
+   *
+   * @example
+   * ```typescript
+   * // User enters reset code and new password
+   * const resetCode = getUserResetCode();
+   * const newPassword = getUserNewPassword();
+   *
+   * const { error } = await auth.email.resetPassword({
+   *   email: 'user@example.com',
+   *   password: newPassword,
+   *   challengeToken: resetCode
+   * });
+   *
+   * if (error) {
+   *   console.error('Password reset failed:', error.message);
+   * } else {
+   *   console.log('Password reset successful');
+   *   // Redirect to login screen
+   *   showLoginScreen();
+   * }
+   * ```
+   *
+   * @public
    */
   async resetPassword(args: {
     email?: string;
@@ -115,9 +360,58 @@ export class Email {
   }
 
   /**
-   * Authenticates the user with email and password.
-   * @param args Email, password, and optional parameters like challengeToken, name, tags, and policy
-   * @returns Access token and user information
+   * Authenticates a user with email and password, including device attestation.
+   *
+   * Performs the final authentication step by validating the user's password
+   * and generating an access token. This method integrates device attestation
+   * for enhanced security and stores the resulting access token securely.
+   *
+   * @param args - Authentication parameters
+   * @param args.challengeToken - Optional challenge token from verification
+   * @param args.email - User's email address
+   * @param args.emailVerified - Whether email has been verified
+   * @param args.name - User's display name (required for new users)
+   * @param args.password - User's password (required)
+   * @param args.tags - Optional user tags for categorization
+   * @param args.policy - Authentication policy settings
+   * @param args.doNotNotify - If true, suppresses notification emails
+   * @returns Promise resolving to authenticated user data or error
+   *
+   * @example Existing user login
+   * ```typescript
+   * const { data: user, error } = await auth.email.authenticate({
+   *   email: 'user@example.com',
+   *   password: 'userPassword',
+   *   challengeToken: verificationToken
+   * });
+   *
+   * if (error) {
+   *   console.error('Authentication failed:', error.message);
+   *   // Handle specific error cases
+   *   if (error.code === 'INVALID_CREDENTIALS') {
+   *     showError('Invalid email or password');
+   *   }
+   * } else {
+   *   console.log('User authenticated:', user);
+   *   // Navigate to main app screen
+   *   navigateToMainApp();
+   * }
+   * ```
+   *
+   * @example New user registration
+   * ```typescript
+   * const { data: user, error } = await auth.email.authenticate({
+   *   email: 'newuser@example.com',
+   *   password: 'newPassword',
+   *   name: 'John Doe',
+   *   challengeToken: verificationToken,
+   *   tags: ['premium', 'beta-tester']
+   * });
+   * ```
+   *
+   * @throws Error if password is not provided
+   *
+   * @public
    */
   async authenticate({
     challengeToken,
@@ -162,29 +456,72 @@ export class Email {
         token: challengeToken,
         attestationToken,
       })
-      .json<{ accessToken: string; user: Record<string, unknown> }>();
+      .json(json => ({
+        accessToken: json.accessToken as string,
+        user: jsonToUser(json.user),
+      }));
     if (result.error) {
       return result;
     }
 
     await this._store.put('accessToken', result.data.accessToken);
-
     return {
       data: {
-        user: jsonToUser(result.data.user),
+        user: result.data.user,
       },
-      error: undefined,
+      error: null,
     };
   }
 }
 
+/**
+ * Main authentication class providing access to various authentication methods.
+ *
+ * The Auth class serves as the central hub for all authentication operations
+ * in the Calljmp SDK. It provides access to email-based authentication and
+ * manages the overall authentication state and challenge tokens.
+ *
+ * Features:
+ * - Email authentication with verification
+ * - Challenge token generation and management
+ * - Secure token storage and cleanup
+ * - Device attestation integration
+ *
+ * @example
+ * ```typescript
+ * const auth = new Auth(config, attestation, secureStore);
+ *
+ * // Use email authentication
+ * const { data: user, error } = await auth.email.authenticate({
+ *   email: 'user@example.com',
+ *   password: 'userPassword'
+ * });
+ *
+ * // Clear authentication state
+ * await auth.clear();
+ * ```
+ *
+ * @public
+ */
 export class Auth {
+  /**
+   * Email authentication provider instance.
+   *
+   * Provides access to all email-based authentication methods including
+   * verification, password management, and user authentication.
+   *
+   * @public
+   */
   public readonly email: Email;
 
   /**
-   * @param _config SDK configuration
-   * @param attestation Device attestation provider
-   * @param _store Secure storage for tokens
+   * Creates a new Auth instance with the specified configuration and dependencies.
+   *
+   * @param _config - SDK configuration containing service URLs and settings
+   * @param attestation - Device attestation provider for security verification
+   * @param _store - Secure storage for access tokens and sensitive data
+   *
+   * @public
    */
   constructor(
     private _config: Config,
@@ -195,8 +532,27 @@ export class Auth {
   }
 
   /**
-   * Requests a new authentication challenge token from the backend.
-   * @returns An object containing the challenge token.
+   * Requests a new authentication challenge token from the backend service.
+   *
+   * Challenge tokens are used as part of the secure authentication flow and
+   * must be obtained before performing user authentication or password operations.
+   * These tokens have a limited lifespan and ensure request authenticity.
+   *
+   * @returns Promise resolving to an object containing the challenge token
+   *
+   * @example
+   * ```typescript
+   * const { data, error } = await auth.challenge();
+   *
+   * if (error) {
+   *   console.error('Failed to get challenge token:', error.message);
+   * } else {
+   *   console.log('Challenge token:', data.challengeToken);
+   *   // Use token for subsequent authentication operations
+   * }
+   * ```
+   *
+   * @public
    */
   async challenge() {
     return request(`${this._config.serviceUrl}/users/auth/challenge`)
@@ -207,7 +563,27 @@ export class Auth {
 
   /**
    * Clears the stored access token, effectively logging the user out.
-   * @returns A promise that resolves when the token is deleted.
+   *
+   * This method removes the access token from secure storage, which will
+   * cause subsequent authentication checks to fail. This is the recommended
+   * way to implement user logout functionality.
+   *
+   * @returns Promise that resolves when the token is successfully deleted
+   *
+   * @example
+   * ```typescript
+   * // Logout user
+   * await auth.clear();
+   *
+   * // Verify user is logged out
+   * const isAuthenticated = await auth.email.authenticated();
+   * console.log('User logged out:', !isAuthenticated);
+   *
+   * // Redirect to login screen
+   * navigateToLogin();
+   * ```
+   *
+   * @public
    */
   async clear() {
     await this._store.delete('accessToken');

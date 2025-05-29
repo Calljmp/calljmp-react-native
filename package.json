@@ -1,7 +1,7 @@
 {
   "name": "@calljmp/react-native",
-  "version": "0.0.25-preview",
-  "description": "Calljmp SDK for React Native",
+  "version": "0.0.26",
+  "description": "Calljmp is a secure backend-as-a-service (BaaS) for React Native apps, with auth, storage, SQL access, and attestation support.",
   "main": "./src/index.ts",
   "peerDependencies": {
     "react": "*",
