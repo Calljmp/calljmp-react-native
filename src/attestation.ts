@@ -50,6 +50,8 @@ export class Attestation {
   /** Android Google Cloud project number for Play Integrity API */
   private _cloudProjectNumber: number | null = null;
 
+  private _disableAndroidAttestation = false;
+
   /**
    * Creates a new Attestation instance with platform-specific configuration.
    *
@@ -82,15 +84,20 @@ export class Attestation {
   constructor({
     keyId = null,
     android,
+    development,
   }: {
     keyId?: string | null;
     android?: {
       cloudProjectNumber?: number;
     };
+    development?: {
+      enabled?: boolean;
+    };
   } = {}) {
     this._keyId = keyId;
 
     if (Platform.OS === 'android') {
+      this._disableAndroidAttestation = development?.enabled ?? false;
       this._cloudProjectNumber = android?.cloudProjectNumber ?? null;
     }
   }
@@ -191,6 +198,9 @@ export class Attestation {
     }
 
     if (Platform.OS === 'android') {
+      if (this._disableAndroidAttestation) {
+        throw new Error('Android attestation is disabled in development mode');
+      }
       return NativeDevice.androidRequestIntegrityToken(
         this._cloudProjectNumber,
         typeof data === 'string' ? data : JSON.stringify(data)

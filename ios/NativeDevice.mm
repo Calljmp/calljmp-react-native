@@ -52,7 +52,7 @@ RCT_EXPORT_MODULE(NativeCalljmpDevice);
 
     NSData *dataBytes = [data dataUsingEncoding:NSUTF8StringEncoding];
     NSMutableData *hashData = [NSMutableData dataWithLength:CC_SHA256_DIGEST_LENGTH];
-    CC_SHA256(dataBytes.bytes, static_cast<CC_LONG>(dataBytes.length), static_cast<unsigned char*>(hashData.mutableBytes));
+    CC_SHA256(dataBytes.bytes, static_cast<CC_LONG>(dataBytes.length), static_cast<uint8_t *>(hashData.mutableBytes));
 
     [_attestService attestKey:keyId clientDataHash:hashData completionHandler:^(NSData * _Nullable attestationObject, NSError * _Nullable error) {
       if (error) {

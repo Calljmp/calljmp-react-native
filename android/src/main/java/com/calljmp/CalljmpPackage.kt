@@ -11,6 +11,7 @@ class CalljmpPackage : BaseReactPackage() {
         return when (name) {
             NativeCalljmpDevice.NAME -> NativeCalljmpDevice(reactContext)
             NativeCalljmpStore.NAME -> NativeCalljmpStore(reactContext)
+            NativeCalljmpCrypto.NAME -> NativeCalljmpCrypto(reactContext)
             else -> null
         }
     }
@@ -29,6 +30,14 @@ class CalljmpPackage : BaseReactPackage() {
             moduleInfos[NativeCalljmpStore.NAME] = ReactModuleInfo(
                 name = NativeCalljmpStore.NAME,
                 className = NativeCalljmpStore.NAME,
+                canOverrideExistingModule = false,
+                needsEagerInit = false,
+                isCxxModule = false,
+                isTurboModule = true,
+            )
+            moduleInfos[NativeCalljmpCrypto.NAME] = ReactModuleInfo(
+                name = NativeCalljmpCrypto.NAME,
+                className = NativeCalljmpCrypto.NAME,
                 canOverrideExistingModule = false,
                 needsEagerInit = false,
                 isCxxModule = false,
