@@ -31,7 +31,7 @@ import { SecureStore } from './secure-store';
  * ```typescript
  * const file = await sdk.storage.upload({
  *   content: 'Hello, world!',
- *   bucketId: 'documents',
+ *   bucket: 'documents',
  *   key: 'greeting.txt',
  *   description: 'A simple greeting file',
  *   tags: ['greeting', 'text'],
@@ -43,7 +43,7 @@ import { SecureStore } from './secure-store';
  * @example Download a file
  * ```typescript
  * const fileBlob = await sdk.storage.retrieve({
- *   bucketId: 'documents',
+ *   bucket: 'documents',
  *   key: 'greeting.txt'
  * });
  * const content = await fileBlob.data.text();
@@ -75,7 +75,7 @@ export class Storage {
    *
    * @param params - Upload parameters
    * @param params.content - File content as string or Blob
-   * @param params.bucketId - Target bucket identifier where the file will be stored
+   * @param params.bucket - Target bucket name where the file will be stored
    * @param params.key - Unique storage key (filename/path) within the bucket
    * @param params.description - Optional human-readable description of the file
    * @param params.tags - Optional array of tags for categorizing and searching files
@@ -90,7 +90,7 @@ export class Storage {
    * ```typescript
    * const result = await sdk.storage.upload({
    *   content: 'This is my document content',
-   *   bucketId: 'user-documents',
+   *   bucket: 'documents',
    *   key: 'my-document.txt',
    *   description: 'Personal document',
    *   tags: ['personal', 'document'],
@@ -111,7 +111,7 @@ export class Storage {
    * const imageBlob = new Blob([imageData], { type: 'image/jpeg' });
    * const result = await sdk.storage.upload({
    *   content: imageBlob,
-   *   bucketId: 'user-photos',
+   *   bucket: 'photos',
    *   key: `photos/${Date.now()}.jpg`,
    *   description: 'Profile photo',
    *   tags: ['profile', 'photo'],
@@ -128,7 +128,7 @@ export class Storage {
    */
   async upload({
     content,
-    bucketId,
+    bucket,
     key,
     description,
     tags,
@@ -136,7 +136,7 @@ export class Storage {
     type,
   }: {
     content: string | Blob;
-    bucketId: string;
+    bucket: string;
     key: string;
     description?: string | null;
     tags?: string[];
@@ -154,7 +154,7 @@ export class Storage {
         tags,
       })
     );
-    return request(`${this._config.serviceUrl}/data/${bucketId}/${key}`)
+    return request(`${this._config.serviceUrl}/data/${bucket}/${key}`)
       .use(context(this._config), access(this._store))
       .post(formData)
       .json(jsonToBucketFile);
@@ -168,7 +168,7 @@ export class Storage {
    * large files or when you only need a specific section of the content.
    *
    * @param params - Retrieval parameters
-   * @param params.bucketId - Source bucket identifier
+   * @param params.bucket - Source bucket identifier
    * @param params.key - Storage key (filename/path) of the file to retrieve
    * @param params.offset - Optional byte offset to start reading from (0-based)
    * @param params.length - Optional number of bytes to read from the offset
@@ -180,7 +180,7 @@ export class Storage {
    * @example Download complete file
    * ```typescript
    * const result = await sdk.storage.retrieve({
-   *   bucketId: 'documents',
+   *   bucket: 'documents',
    *   key: 'report.pdf'
    * });
    *
@@ -200,7 +200,7 @@ export class Storage {
    * ```typescript
    * // Download first 1KB of a large file
    * const result = await sdk.storage.retrieve({
-   *   bucketId: 'large-files',
+   *   bucket: 'large-files',
    *   key: 'big-dataset.csv',
    *   offset: 0,
    *   length: 1024
@@ -217,7 +217,7 @@ export class Storage {
    *
    * while (true) {
    *   const result = await sdk.storage.retrieve({
-   *     bucketId: 'videos',
+   *     bucket: 'videos',
    *     key: 'movie.mp4',
    *     offset,
    *     length: chunkSize
@@ -238,17 +238,17 @@ export class Storage {
    * - Supports resumable downloads by specifying appropriate offset values
    */
   async retrieve({
-    bucketId,
+    bucket,
     key,
     offset,
     length,
   }: {
-    bucketId: string;
+    bucket: string;
     key: string;
     offset?: number;
     length?: number;
   }) {
-    return request(`${this._config.serviceUrl}/data/${bucketId}/${key}`)
+    return request(`${this._config.serviceUrl}/data/${bucket}/${key}`)
       .use(context(this._config), access(this._store))
       .params({
         offset,
@@ -260,7 +260,7 @@ export class Storage {
 
   /**
    * Retrieves file metadata from a storage bucket.
-   * @param bucketId Target bucket ID
+   * @param bucket Target bucket
    * @param key Storage key (filename)
   /**
    * Retrieves file metadata from a storage bucket without downloading the content.
@@ -271,7 +271,7 @@ export class Storage {
    * or building file browsers.
    * 
    * @param params - Peek parameters
-   * @param params.bucketId - Source bucket identifier
+   * @param params.bucket - Source bucket
    * @param params.key - Storage key (filename/path) of the file
    * 
    * @returns A promise that resolves to the file metadata
@@ -281,7 +281,7 @@ export class Storage {
    * @example Get file metadata
    * ```typescript
    * const result = await sdk.storage.peek({
-   *   bucketId: 'documents',
+   *   bucket: 'documents',
    *   key: 'report.pdf'
    * });
    * 
@@ -301,8 +301,8 @@ export class Storage {
    * 
    * @example Build a file browser
    * ```typescript
-   * async function getFileInfo(bucketId: string, key: string) {
-   *   const result = await sdk.storage.peek({ bucketId, key });
+   * async function getFileInfo(bucket: string, key: string) {
+   *   const result = await sdk.storage.peek({ bucket, key });
    *   if (result.data) {
    *     return {
    *       name: result.data.key,
@@ -321,8 +321,8 @@ export class Storage {
    * - Essential for building file management UIs
    * - Returns the same metadata structure as `upload()` and `update()`
    */
-  async peek({ bucketId, key }: { bucketId: string; key: string }) {
-    return request(`${this._config.serviceUrl}/data/${bucketId}/${key}`)
+  async peek({ bucket, key }: { bucket: string; key: string }) {
+    return request(`${this._config.serviceUrl}/data/${bucket}/${key}`)
       .use(context(this._config), access(this._store))
       .params({ peek: true })
       .get()
@@ -337,7 +337,7 @@ export class Storage {
    * organization, searchability, and maintaining up-to-date file information.
    *
    * @param params - Update parameters
-   * @param params.bucketId - Target bucket identifier
+   * @param params.bucket - Target bucket
    * @param params.key - Storage key (filename/path) of the file to update
    * @param params.description - New description for the file (null to remove)
    * @param params.tags - New array of tags for the file
@@ -349,7 +349,7 @@ export class Storage {
    * @example Update file description and tags
    * ```typescript
    * const result = await sdk.storage.update({
-   *   bucketId: 'documents',
+   *   bucket: 'documents',
    *   key: 'report.pdf',
    *   description: 'Updated quarterly financial report',
    *   tags: ['finance', 'quarterly', '2024', 'updated']
@@ -367,7 +367,7 @@ export class Storage {
    * @example Remove description but keep tags
    * ```typescript
    * await sdk.storage.update({
-   *   bucketId: 'temp-files',
+   *   bucket: 'files',
    *   key: 'temp-data.json',
    *   description: null, // Remove description
    *   tags: ['temporary', 'json'] // Keep these tags
@@ -381,7 +381,7 @@ export class Storage {
    *
    * for (const filename of filesToTag) {
    *   await sdk.storage.update({
-   *     bucketId: 'processing',
+   *     bucket: 'processing',
    *     key: filename,
    *     tags: newTags
    *   });
@@ -395,17 +395,17 @@ export class Storage {
    * - Useful for implementing file organization and search features
    */
   async update({
-    bucketId,
+    bucket,
     key,
     description,
     tags,
   }: {
-    bucketId: string;
+    bucket: string;
     key: string;
     description?: string | null;
     tags?: string[];
   }) {
-    return request(`${this._config.serviceUrl}/data/${bucketId}/${key}`)
+    return request(`${this._config.serviceUrl}/data/${bucket}/${key}`)
       .use(context(this._config), access(this._store))
       .put({
         description,
@@ -422,7 +422,7 @@ export class Storage {
    * confirmation dialogs or soft-delete patterns for important files.
    *
    * @param params - Deletion parameters
-   * @param params.bucketId - Target bucket identifier
+   * @param params.bucket - Target bucket
    * @param params.key - Storage key (filename/path) of the file to delete
    *
    * @returns A promise that resolves when the file is successfully deleted
@@ -432,7 +432,7 @@ export class Storage {
    * @example Delete a single file
    * ```typescript
    * const result = await sdk.storage.delete({
-   *   bucketId: 'temp-files',
+   *   bucket: 'temp-files',
    *   key: 'temporary-data.json'
    * });
    *
@@ -445,10 +445,10 @@ export class Storage {
    *
    * @example Delete with confirmation
    * ```typescript
-   * async function deleteFileWithConfirmation(bucketId: string, key: string) {
+   * async function deleteFileWithConfirmation(bucket: string, key: string) {
    *   const confirmed = confirm(`Are you sure you want to delete ${key}?`);
    *   if (confirmed) {
-   *     const result = await sdk.storage.delete({ bucketId, key });
+   *     const result = await sdk.storage.delete({ bucket, key });
    *     if (result.error) {
    *       alert('Failed to delete file: ' + result.error.message);
    *     } else {
@@ -465,7 +465,7 @@ export class Storage {
    * for (const filename of filesToDelete) {
    *   try {
    *     await sdk.storage.delete({
-   *       bucketId: 'cleanup-bucket',
+   *       bucket: 'cleanup-bucket',
    *       key: filename
    *     });
    *     console.log(`Deleted: ${filename}`);
@@ -481,8 +481,8 @@ export class Storage {
    * - Consider implementing backup or versioning strategies for important files
    * - No error is thrown if the file doesn't exist (idempotent operation)
    */
-  async delete({ bucketId, key }: { bucketId: string; key: string }) {
-    return request(`${this._config.serviceUrl}/data/${bucketId}/${key}`)
+  async delete({ bucket, key }: { bucket: string; key: string }) {
+    return request(`${this._config.serviceUrl}/data/${bucket}/${key}`)
       .use(context(this._config), access(this._store))
       .delete()
       .json();
@@ -496,7 +496,7 @@ export class Storage {
    * browsers, implementing search functionality, and managing large collections of files.
    *
    * @param params - Listing parameters
-   * @param params.bucketId - Target bucket identifier to list files from
+   * @param params.bucket - Target bucket to list files from
    * @param params.offset - Starting position for pagination (default: 0)
    * @param params.limit - Maximum number of files to return in one request
    * @param params.orderDirection - Sort direction: 'asc' for ascending, 'desc' for descending
@@ -509,7 +509,7 @@ export class Storage {
    * @example List recent files
    * ```typescript
    * const result = await sdk.storage.list({
-   *   bucketId: 'user-documents',
+   *   bucket: 'documents',
    *   limit: 20,
    *   orderField: 'createdAt',
    *   orderDirection: 'desc'
@@ -531,10 +531,10 @@ export class Storage {
    *
    * @example Paginated file browser
    * ```typescript
-   * async function loadFilesPage(bucketId: string, page: number, pageSize: number) {
+   * async function loadFilesPage(bucket: string, page: number, pageSize: number) {
    *   const offset = page * pageSize;
    *   const result = await sdk.storage.list({
-   *     bucketId,
+   *     bucket,
    *     offset,
    *     limit: pageSize,
    *     orderField: 'updatedAt',
@@ -551,14 +551,14 @@ export class Storage {
    *
    * @example List all files with pagination
    * ```typescript
-   * async function getAllFiles(bucketId: string) {
+   * async function getAllFiles(bucket: string) {
    *   const allFiles = [];
    *   let offset = 0;
    *   const limit = 100;
    *
    *   while (true) {
    *     const result = await sdk.storage.list({
-   *       bucketId,
+   *       bucket,
    *       offset,
    *       limit
    *     });
@@ -582,19 +582,19 @@ export class Storage {
    * - Each file object includes full metadata (size, type, description, tags, timestamps)
    */
   async list({
-    bucketId,
+    bucket,
     offset = 0,
     limit,
     orderDirection,
     orderField,
   }: {
-    bucketId: string;
+    bucket: string;
     offset?: number;
     limit?: number;
     orderDirection?: 'asc' | 'desc';
     orderField?: string;
   }) {
-    return request(`${this._config.serviceUrl}/data/${bucketId}/list`)
+    return request(`${this._config.serviceUrl}/data/${bucket}/list`)
       .use(context(this._config), access(this._store))
       .params({
         offset,

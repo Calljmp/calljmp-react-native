@@ -175,4 +175,37 @@ export class Users {
       .get()
       .json(jsonToUser);
   }
+
+  /**
+   * Updates the current user's profile with new data.
+   *
+   * Allows modification of user profile fields such as name, avatar, and tags.
+   * This method requires the user to be authenticated and will return an error
+   * if the authentication token is invalid or expired.
+   *
+   * @param args - Object containing fields to update
+   * @param args.name - New name for the user (optional)
+   * @param args.avatar - New avatar URL for the user (optional)
+   * @param args.tags - Array of tags to associate with the user (optional)
+   *
+   * @returns Promise resolving to the updated user profile data
+   *
+   * @example
+   * ```typescript
+   * const updatedUser = await users.update({
+   *   name: 'New Name',
+   *   avatar: 'https://example.com/avatar.png',
+   * });
+   *
+   * console.log('Updated user:', updatedUser);
+   * ```
+   *
+   * @public
+   */
+  async update(args: { name?: string; avatar?: string; tags?: string[] }) {
+    return request(`${this._config.serviceUrl}/users`)
+      .use(context(this._config), access(this._store))
+      .put(args)
+      .json(jsonToUser);
+  }
 }
