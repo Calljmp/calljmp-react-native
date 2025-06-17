@@ -237,7 +237,11 @@ export class Service {
    */
   request(route = '/') {
     const sanitizedRoute = route.replace(/^\//, '');
-    return request(`${this.url}/${sanitizedRoute}`).use(
+    const urlInfo = this.url;
+    if (urlInfo.error) {
+      throw new Error(`Failed to get service URL: ${urlInfo.error}`);
+    }
+    return request(`${urlInfo.data.url}/${sanitizedRoute}`).use(
       context(this._config),
       access(this._store)
     );
