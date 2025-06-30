@@ -7,6 +7,7 @@ import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.module.annotations.ReactModule
 import java.security.MessageDigest
+import java.util.UUID
 
 @ReactModule(name = NativeCalljmpCrypto.NAME)
 class NativeCalljmpCrypto(reactContext: ReactApplicationContext) :
@@ -30,6 +31,15 @@ class NativeCalljmpCrypto(reactContext: ReactApplicationContext) :
             promise.resolve(writableArray)
         } catch (e: Exception) {
             promise.reject("HashError", "Failed to compute SHA-256 hash", e)
+        }
+    }
+
+    override fun uuid(promise: Promise) {
+        try {
+            val uuid = UUID.randomUUID().toString()
+            promise.resolve(uuid)
+        } catch (e: Exception) {
+            promise.reject("UuidError", "Failed to get UUID", e)
         }
     }
 

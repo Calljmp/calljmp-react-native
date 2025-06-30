@@ -12,9 +12,8 @@ export function access(store: SecureStore) {
     request: HttpRequest,
     next: (request: HttpRequest) => Promise<HttpResponse>
   ): Promise<HttpResponse> => {
-    const accessToken = await store.get('accessToken');
-    if (accessToken) {
-      request.header('Authorization', `Bearer ${accessToken}`);
+    for (const [key, value] of Object.entries(await makeAccess(store))) {
+      request.header(key, value);
     }
 
     const response = await next(request);
@@ -26,4 +25,13 @@ export function access(store: SecureStore) {
 
     return response;
   };
+}
+
+export async function makeAccess(store: SecureStore) {
+  const data: Record<string, string> = {};
+  const accessToken = await store.get('accessToken');
+  if (accessToken) {
+    data['Authorization'] = `Bearer ${accessToken}`;
+  }
+  return data;
 }

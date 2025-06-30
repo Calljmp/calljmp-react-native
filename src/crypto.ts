@@ -45,3 +45,7 @@ export async function sha256(
 
   return digest.buffer;
 }
+
+export async function uuid() {
+  return NativeCrypto.uuid();
+}

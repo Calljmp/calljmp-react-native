@@ -32,4 +32,9 @@ RCT_EXPORT_MODULE(NativeCalljmpCrypto);
   resolve(result);
 }
 
+- (void)uuid:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject {
+  NSString *uuid = [[NSUUID UUID] UUIDString];
+  resolve(uuid);
+}
+
 @end

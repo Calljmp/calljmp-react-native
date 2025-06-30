@@ -14,6 +14,8 @@ import { Database } from './database';
 import { Service } from './service';
 import { Integrity } from './integrity';
 import { Storage } from './storage';
+import { Signal } from './signal';
+import { Realtime } from './realtime';
 
 /**
  * Main entry point for the Calljmp React Native SDK.
@@ -89,6 +91,12 @@ export class Calljmp {
   public readonly storage: Storage;
 
   /**
+   * Signal API for real-time communication and event handling.
+   * @readonly
+   */
+  public readonly realtime: Realtime;
+
+  /**
    * Creates a new Calljmp SDK instance with the specified configuration.
    *
    * @param config - Optional configuration for endpoints, development mode, and platform-specific settings
@@ -125,6 +133,7 @@ export class Calljmp {
 
     const store = new SecureStore();
     const attestation = new Attestation(config);
+    const signal = new Signal(finalConfig, store);
 
     this.integrity = new Integrity(finalConfig, attestation, store);
     this.users = new Users(finalConfig, attestation, store);
@@ -132,5 +141,6 @@ export class Calljmp {
     this.database = new Database(finalConfig, store);
     this.service = new Service(finalConfig, this.integrity, store);
     this.storage = new Storage(finalConfig, store);
+    this.realtime = new Realtime(signal);
   }
 }

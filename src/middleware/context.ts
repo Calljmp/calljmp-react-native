@@ -12,13 +12,19 @@ export function context(config: Config) {
     request: HttpRequest,
     next: (request: HttpRequest) => Promise<HttpResponse>
   ): Promise<HttpResponse> => {
-    request.header('X-Calljmp-Platform', Platform.OS);
-    if (config.development?.enabled && config.development?.apiToken) {
-      request.header(
-        'X-Calljmp-Development-Api-Token',
-        config.development.apiToken
-      );
+    for (const [key, value] of Object.entries(makeContext(config))) {
+      request.header(key, value);
     }
     return next(request);
   };
+}
+
+export function makeContext(config: Config): Record<string, string> {
+  const data: Record<string, string> = {
+    'X-Calljmp-Platform': Platform.OS,
+  };
+  if (config.development?.enabled && config.development?.apiToken) {
+    data['X-Calljmp-Development-Api-Token'] = config.development.apiToken;
+  }
+  return data;
 }
