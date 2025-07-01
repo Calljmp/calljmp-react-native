@@ -138,7 +138,7 @@ export class Calljmp {
     this.integrity = new Integrity(finalConfig, attestation, store);
     this.users = new Users(finalConfig, attestation, store);
     this.project = new Project(finalConfig, attestation);
-    this.database = new Database(finalConfig, store);
+    this.database = new Database(finalConfig, store, signal);
     this.service = new Service(finalConfig, this.integrity, store);
     this.storage = new Storage(finalConfig, store);
     this.realtime = new Realtime(signal);

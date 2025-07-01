@@ -1,6 +1,9 @@
 import {
   DotPaths,
   ProjectedType,
+  SignalDatabaseDelete,
+  SignalDatabaseInsert,
+  SignalDatabaseUpdate,
   SignalFilter,
   SignalMessageAck,
   SignalMessageData,
@@ -150,8 +153,18 @@ export class Realtime {
         });
     };
 
-    const handleData = async (message: SignalMessageData) => {
-      if (subscription.active && message.topic === options.topic) {
+    const handleData = async (
+      message:
+        | SignalMessageData
+        | SignalDatabaseInsert
+        | SignalDatabaseUpdate
+        | SignalDatabaseDelete
+    ) => {
+      if (
+        subscription.active &&
+        message.topic === options.topic &&
+        'data' in message
+      ) {
         try {
           await options.onData?.(
             message.topic as RealtimeTopic,

@@ -45,3 +45,24 @@ export {
 } from './common';
 
 export * from './client';
+
+export type {
+  RealtimeSubscription,
+  RealtimeTopic,
+  RealtimeTopicHandler,
+} from './realtime';
+
+export type {
+  DatabaseRowId,
+  DatabaseRow,
+  DatabaseSubscriptionInsertHandler,
+  DatabaseSubscriptionUpdateHandler,
+  DatabaseSubscriptionDeleteHandler,
+  DatabaseSubscription,
+  DatabaseSubscriptionEvent,
+  DatabaseObservePath,
+  DatabaseInsertObserver,
+  DatabaseUpdateObserver,
+  DatabaseDeleteObserver,
+  DatabaseObserverForEvent,
+} from './database';

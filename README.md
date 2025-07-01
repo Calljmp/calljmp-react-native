@@ -19,6 +19,23 @@ Calljmp is a **secure backend designed for mobile developers**, providing:
 🔹 **Website**: [calljmp.com](https://calljmp.com)  
 🔹 **Follow**: [@calljmpdev](https://x.com/calljmpdev)
 
+## 📑 Table of Contents
+
+- [🚀 Overview](#-overview)
+- [📦 Installation](#-installation)
+- [🛠️ Setup & Usage](#️-setup--usage)
+  - [1️⃣ Initialize Calljmp](#1️⃣-initialize-calljmp)
+  - [2️⃣ Authenticate User](#2️⃣-authenticate-user)
+  - [3️⃣ Run Direct SQL Queries](#3️⃣-run-direct-sql-queries)
+  - [4️⃣ Real-time Database Subscriptions](#4️⃣-real-time-database-subscriptions)
+  - [5️⃣ Cloud Storage & File Management](#5️⃣-cloud-storage--file-management)
+  - [6️⃣ OAuth Authentication](#6️⃣-oauth-authentication)
+  - [7️⃣ Real-time Messaging](#7️⃣-real-time-messaging)
+  - [8️⃣ Access Service](#8️⃣-access-service)
+- [🔒 Security & App Attestation](#-security--app-attestation)
+- [📄 License](#-license)
+- [💬 Support & Community](#-support--community)
+
 ---
 
 ## 📦 Installation
@@ -89,7 +106,43 @@ if (result.error) {
 console.log(result.data);
 ```
 
-### 4️⃣ Cloud Storage & File Management
+### 4️⃣ Real-time Database Subscriptions
+
+Subscribe to database changes in real-time and react to data modifications as they happen:
+
+```typescript
+// Observe new user insertions
+const insertSubscription = await calljmp.database
+  .observe<User>('users.insert')
+  .on('insert', ({ rows }) => {
+    console.log('New users added:', rows);
+    // Update your UI or trigger other actions
+  })
+  .subscribe();
+
+// Observe user updates
+const updateSubscription = await calljmp.database
+  .observe<User>('users.update')
+  .on('update', ({ rows }) => {
+    console.log('Users updated:', rows);
+  })
+  .subscribe();
+
+// Observe user deletions
+const deleteSubscription = await calljmp.database
+  .observe<User>('users.delete')
+  .on('delete', ({ rowIds }) => {
+    console.log('Users deleted:', rowIds);
+  })
+  .subscribe();
+
+// Unsubscribe when done
+await updateSubscription.unsubscribe();
+await insertSubscription.unsubscribe();
+await deleteSubscription.unsubscribe();
+```
+
+### 5️⃣ Cloud Storage & File Management
 
 Calljmp provides secure cloud storage with organized bucket management. Upload, download, and manage files with metadata, tags, and access controls.
 
@@ -325,7 +378,153 @@ for (const filename of filesToDelete) {
 }
 ```
 
-### 5️⃣ Access Service
+### 6️⃣ OAuth Authentication
+
+Authenticate users with popular OAuth providers like Apple and Google:
+
+#### Apple Sign-In
+
+```typescript
+// Apple OAuth authentication
+const appleAuth = await calljmp.users.auth.apple.authenticate({
+  identityToken: appleIdentityToken, // From Apple Sign-In
+  policy: UserAuthenticationPolicy.SignInOrCreate,
+  tags: ['role:member']
+});
+
+if (appleAuth.error) {
+  console.error('Apple authentication failed:', appleAuth.error);
+} else {
+  console.log('Apple user authenticated:', appleAuth.data.user);
+}
+```
+
+#### Google Sign-In
+
+```typescript
+// Google OAuth authentication
+const googleAuth = await calljmp.users.auth.google.authenticate({
+  identityToken: googleIdToken, // From Google Sign-In
+  policy: UserAuthenticationPolicy.SignInOrCreate,
+  tags: ['role:member']
+});
+
+if (googleAuth.error) {
+  console.error('Google authentication failed:', googleAuth.error);
+} else {
+  console.log('Google user authenticated:', googleAuth.data.user);
+}
+```
+
+### 7️⃣ Real-time Messaging
+
+Build real-time features like user presence, notifications, and live updates using Calljmp's pub/sub messaging system:
+
+#### User Presence System
+
+```typescript
+interface UserPresence {
+  userId: string;
+  status: 'online' | 'away' | 'offline';
+  lastSeen: string;
+  metadata?: {
+    device?: string;
+    location?: string;
+  };
+}
+
+// Subscribe to presence updates for all users
+const presenceSubscription = await calljmp.realtime
+  .observe<UserPresence>('user.presence')
+  .on('data', async (topic, presenceData) => {
+    console.log(`User ${presenceData.userId} is now ${presenceData.status}`);
+    
+    // Update your UI to show user presence
+    updateUserPresenceInUI(presenceData);
+  })
+  .subscribe();
+
+// Publish your own presence when app becomes active
+const publishPresence = async (status: 'online' | 'away' | 'offline') => {
+  await calljmp.realtime.publish({
+    topic: 'user.presence',
+    data: {
+      userId: currentUser.id,
+      status,
+      lastSeen: new Date().toISOString(),
+      metadata: {
+        device: Platform.OS,
+        location: 'main-screen'
+      }
+    } as UserPresence
+  });
+};
+
+// Set user as online when app starts
+await publishPresence('online');
+
+// Handle app state changes
+import { AppState } from 'react-native';
+
+AppState.addEventListener('change', (nextAppState) => {
+  if (nextAppState === 'active') {
+    publishPresence('online');
+  } else if (nextAppState === 'background') {
+    publishPresence('away');
+  }
+});
+
+// Clean up when user logs out
+const cleanup = async () => {
+  await publishPresence('offline');
+  await presenceSubscription.unsubscribe();
+};
+```
+
+#### Live Notifications
+
+```typescript
+interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  type: 'info' | 'warning' | 'success' | 'error';
+  targetUserId?: string;
+  createdAt: string;
+}
+
+// Subscribe to notifications for current user
+const notificationSubscription = await calljmp.realtime
+  .observe<Notification>('notifications')
+  .filter({ targetUserId: currentUser.id }) // Only receive notifications for this user
+  .on('data', async (topic, notification) => {
+    // Show notification in your app
+    showNotification({
+      title: notification.title,
+      message: notification.message,
+      type: notification.type
+    });
+    
+    // Store in local state for notification history
+    addNotificationToHistory(notification);
+  })
+  .subscribe();
+
+// Send notification to specific user
+const sendNotification = async (targetUserId: string, notification: Omit<Notification, 'id' | 'createdAt' | 'targetUserId'>) => {
+  await calljmp.realtime.publish({
+    topic: 'notifications',
+    data: {
+      ...notification,
+      id: crypto.randomUUID(),
+      targetUserId,
+      createdAt: new Date().toISOString()
+    } as Notification
+  });
+};
+```
+
+### 8️⃣ Access Service
 
 If you are deploying your own service, you can access it via the `service` property.
 
