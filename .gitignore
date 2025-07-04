@@ -8,3 +8,6 @@ dist
 tmp
 out-tsc
 build
+
+# tools
+tools
