@@ -15,26 +15,53 @@ import {
 } from './common';
 import { Signal, SignalLock, SignalResult } from './signal';
 
+/**
+ * Topic identifier for realtime messaging
+ * @public
+ */
 export type RealtimeTopic = string;
 
+/**
+ * Handler function for realtime topic data
+ * @public
+ */
 export interface RealtimeTopicHandler<Data = {}> {
   (topic: RealtimeTopic, data: Data): Promise<void> | void;
 }
 
+/**
+ * Represents an active realtime subscription
+ * @public
+ */
 export interface RealtimeSubscription {
+  /** The topic this subscription is listening to */
   readonly topic: RealtimeTopic;
+  /** Whether the subscription is currently active */
   readonly active: boolean;
 
+  /** Unsubscribe from the topic */
   unsubscribe: () => Promise<void>;
 }
 
+/**
+ * Options for subscribing to a realtime topic
+ * @public
+ */
 interface RealtimeSubscribeOptions<Data> {
+  /** The topic to subscribe to */
   topic: RealtimeTopic;
+  /** Fields to include in the data projection */
   fields?: string[];
+  /** Filter to apply to incoming data */
   filter?: SignalFilter;
+  /** Handler for incoming data */
   onData?: RealtimeTopicHandler<Data>;
 }
 
+/**
+ * Function signature for subscribing to realtime topics
+ * @public
+ */
 interface RealtimeSubscribe<Data> {
   (options: RealtimeSubscribeOptions<Data>): Promise<RealtimeSubscription>;
 }
@@ -69,6 +96,46 @@ class RealtimeSubscriptionInternal implements RealtimeSubscription {
   };
 }
 
+/**
+ * Main Realtime class for pub/sub messaging
+ *
+ * The Realtime class provides real-time publish/subscribe messaging capabilities
+ * using WebSocket connections. It allows publishing data to topics and subscribing
+ * to receive real-time updates from specific topics with optional filtering.
+ *
+ * ## Features
+ *
+ * - **Topic-based messaging**: Publish and subscribe to named topics
+ * - **Field projection**: Subscribe to only specific fields of the data
+ * - **Real-time filtering**: Apply filters to subscriptions for targeted data
+ * - **Automatic connection management**: Manages Signal connection lifecycle
+ * - **Type safety**: Full TypeScript support with generic types
+ *
+ * ## Usage
+ *
+ * ```typescript
+ * const realtime = new Realtime(signal);
+ *
+ * // Publish data to a topic
+ * await realtime.publish({
+ *   topic: 'chat.room1',
+ *   data: { message: 'Hello World', user: 'john' }
+ * });
+ *
+ * // Subscribe to a topic
+ * const subscription = await realtime.subscribe({
+ *   topic: 'chat.room1',
+ *   onData: (topic, data) => {
+ *     console.log('New message:', data);
+ *   }
+ * });
+ *
+ * // Unsubscribe when done
+ * await subscription.unsubscribe();
+ * ```
+ *
+ * @public
+ */
 export class Realtime {
   private _signalLock: SignalLock | null = null;
   private _subscriptions: Array<RealtimeSubscriptionInternal> = [];
@@ -90,6 +157,35 @@ export class Realtime {
     }
   }
 
+  /**
+   * Publish data to a real-time topic
+   *
+   * Sends data to all subscribers of the specified topic. The data will be
+   * broadcast to all active subscriptions matching the topic.
+   *
+   * @param options - Publishing options
+   * @param options.topic - The topic to publish to
+   * @param options.data - The data to publish
+   *
+   * @example
+   * ```typescript
+   * // Publish a chat message
+   * await realtime.publish({
+   *   topic: 'chat.room1',
+   *   data: {
+   *     message: 'Hello everyone!',
+   *     user: 'john',
+   *     timestamp: Date.now()
+   *   }
+   * });
+   *
+   * // Publish system notification
+   * await realtime.publish({
+   *   topic: 'notifications.system',
+   *   data: { type: 'maintenance', message: 'System will be down for 5 minutes' }
+   * });
+   * ```
+   */
   async publish<T = unknown>({
     topic,
     data,
@@ -104,6 +200,20 @@ export class Realtime {
     });
   }
 
+  /**
+   * Unsubscribe from a specific topic
+   *
+   * Removes an active subscription for the specified topic.
+   *
+   * @param options - Unsubscribe options
+   * @param options.topic - The topic to unsubscribe from (optional)
+   *
+   * @example
+   * ```typescript
+   * // Unsubscribe from a specific topic
+   * await realtime.unsubscribe({ topic: 'chat.room1' });
+   * ```
+   */
   async unsubscribe(options: { topic?: RealtimeTopic }) {
     if (options.topic) {
       const subscription = this._subscriptions.find(
@@ -115,6 +225,15 @@ export class Realtime {
     }
   }
 
+  /**
+   * Observe real-time data for a specific topic with type safety
+   *
+   * Creates a RealtimeObserver that allows you to set up subscriptions
+   * with field projection, filtering, and typed data handling.
+   *
+   * @param topic - The topic to observe
+   * @returns A RealtimeObserver for configuring the subscription
+   */
   observe<T = unknown>(topic: RealtimeTopic) {
     return new RealtimeObserver<T>(this._subscribe.bind(this), topic);
   }
@@ -214,6 +333,15 @@ export class Realtime {
   }
 }
 
+/**
+ * Observer for setting up real-time subscriptions with type safety
+ *
+ * The RealtimeObserver provides a fluent interface for configuring
+ * real-time subscriptions with field projection, filtering, and
+ * event handling.
+ *
+ * @public
+ */
 class RealtimeObserver<
   T,
   const Fields extends readonly DotPaths<T>[] | undefined = undefined,
@@ -228,6 +356,24 @@ class RealtimeObserver<
     private _topic: RealtimeTopic
   ) {}
 
+  /**
+   * Set field projection for the subscription
+   *
+   * Limits the data received to only the specified fields, reducing
+   * bandwidth and improving performance.
+   *
+   * @param fields - Array of field paths to include
+   * @returns The observer instance for chaining
+   *
+   * @example
+   * ```typescript
+   * realtime.observe<User>('users.updates')
+   *   .fields(['name', 'email', 'profile.avatar'])
+   *   .onData((topic, user) => {
+   *     // user only contains name, email, and profile.avatar
+   *   });
+   * ```
+   */
   fields<const F extends readonly DotPaths<Data>[]>(fields: F) {
     this._fields = [fields].flat();
     return this as RealtimeObserver<Data, F>;
