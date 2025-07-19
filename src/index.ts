@@ -61,8 +61,4 @@ export type {
   DatabaseSubscription,
   DatabaseSubscriptionEvent,
   DatabaseObservePath,
-  DatabaseInsertObserver,
-  DatabaseUpdateObserver,
-  DatabaseDeleteObserver,
-  DatabaseObserverForEvent,
 } from './database';
