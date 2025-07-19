@@ -325,15 +325,15 @@ export type DatabaseObservePath<Table extends string = string> =
   | `${Table}.delete`;
 
 export interface DatabaseSubscriptionInsertHandler<T = DatabaseRow> {
-  (event: { rows: Partial<T>[] }): Promise<void> | void;
+  (event: { rows: T[] }): Promise<void> | void;
 }
 
 export interface DatabaseSubscriptionUpdateHandler<T = DatabaseRow> {
-  (event: { rows: Partial<T>[] }): Promise<void> | void;
+  (event: { rows: T[] }): Promise<void> | void;
 }
 
 export interface DatabaseSubscriptionDeleteHandler<T = DatabaseRow> {
-  (event: { rows: Partial<T>[] }): Promise<void> | void;
+  (event: { rows: T[] }): Promise<void> | void;
 }
 
 export interface DatabaseSubscription {
