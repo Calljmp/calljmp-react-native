@@ -106,20 +106,6 @@ export class Storage {
    * }
    * ```
    *
-   * @example Upload binary data with verification
-   * ```typescript
-   * const imageBlob = new Blob([imageData], { type: 'image/jpeg' });
-   * const result = await sdk.storage.upload({
-   *   content: imageBlob,
-   *   bucket: 'photos',
-   *   key: `photos/${Date.now()}.jpg`,
-   *   description: 'Profile photo',
-   *   tags: ['profile', 'photo'],
-   *   type: 'image/jpeg',
-   *   sha256: 'abc123...' // Hash for verification
-   * });
-   * ```
-   *
    * @remarks
    * - The `key` should be unique within the bucket to avoid conflicts
    * - Tags can be used for filtering and searching files later
@@ -135,7 +121,12 @@ export class Storage {
     sha256,
     type,
   }: {
-    content: string | Blob;
+    content:
+      | string
+      | {
+          uri: string;
+          type: string;
+        };
     bucket: string;
     key: string;
     description?: string | null;
@@ -609,6 +600,43 @@ export class Storage {
       }));
   }
 
+  /**
+   * Signs a public URL for accessing a file in a storage bucket.
+   *
+   * This method generates a signed URL that allows temporary public access to a file
+   * in the storage bucket. The URL can be used to download or view the file without
+   * requiring authentication, and it can be configured to expire after a specified time.
+   *
+   * @param params - Signing parameters
+   * @param params.bucket - Bucket containing the file
+   * @param params.key - Storage key (filename/path) of the file to sign
+   * @param params.expiresIn - Optional expiration time in seconds (default: never)
+   * @param params.cacheTtl - Optional cache TTL in seconds for CDN caching (default: never)
+   *
+   * @returns A promise that resolves to an object containing the signed URL
+   *
+   * @throws {ServiceError} When signing fails due to permissions, network, or server errors
+   *
+   * @example Sign a public URL for a file
+   * ```typescript
+   * const result = await sdk.storage.signPublicUrl({
+   *   bucket: 'public-files',
+   *   key: 'image.jpg',
+   *   expiresIn: 3600 // URL valid for 1 hour
+   * });
+   *
+   * if (result.error) {
+   *   console.error('Failed to sign URL:', result.error);
+   * } else {
+   *   console.log('Public URL:', result.data.url);
+   * }
+   * ```
+   *
+   * @remarks
+   * - Signed URLs are useful for sharing files publicly without exposing access tokens
+   * - Expiration helps prevent unauthorized access after the link is shared
+   * - Cache TTL can improve performance when serving files via CDN
+   */
   async signPublicUrl({
     bucket,
     key,
