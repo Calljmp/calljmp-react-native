@@ -202,7 +202,11 @@ export class Users {
    *
    * @public
    */
-  async update(args: { name?: string; avatar?: string; tags?: string[] }) {
+  async update(args: {
+    name?: string | null;
+    avatar?: string | null;
+    tags?: string[] | null;
+  }) {
     return request(`${this._config.serviceUrl}/users`)
       .use(context(this._config), access(this._store))
       .put(args)

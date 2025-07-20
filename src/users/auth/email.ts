@@ -325,9 +325,9 @@ export class Email {
     challengeToken?: string;
     email: string;
     emailVerified?: boolean;
-    name?: string;
+    name?: string | null;
     password?: string;
-    tags?: string[];
+    tags?: string[] | null;
     policy?: UserAuthenticationPolicy;
     doNotNotify?: boolean;
   }) {

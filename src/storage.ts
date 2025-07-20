@@ -608,4 +608,21 @@ export class Storage {
         nextOffset: json.nextOffset as number | undefined,
       }));
   }
+
+  async signPublicUrl({
+    bucket,
+    key,
+    expiresIn,
+    cacheTtl,
+  }: {
+    bucket: string;
+    key: string;
+    expiresIn?: number;
+    cacheTtl?: number;
+  }) {
+    return request(`${this._config.serviceUrl}/data/${bucket}/${key}/url`)
+      .use(context(this._config), access(this._store))
+      .post({ expiresIn, cacheTtl })
+      .json<{ url: string }>();
+  }
 }
