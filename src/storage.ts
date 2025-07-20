@@ -125,6 +125,7 @@ export class Storage {
       | string
       | {
           uri: string;
+          name: string;
           type: string;
         };
     bucket: string;
