@@ -674,12 +674,25 @@ export class Storage {
    * if (result.error) {
    *   console.error('Failed to resolve URL:', result.error);
    * } else {
-   *   console.log('Bucket:', result.info.bucketName);
-   *   console.log('Key:', result.info.key);
+   *   console.log('Bucket:', result.data.bucket);
+   *   console.log('Key:', result.data.key);
    * }
    * ```
    */
-  resolveSignedPublicUrl(url: string) {
+  resolveSignedPublicUrl(url: string):
+    | {
+        data: {
+          bucket: string;
+          key: string;
+          cacheTtl: number;
+          expiresIn?: number;
+        };
+        error: undefined;
+      }
+    | {
+        data: undefined;
+        error: Error;
+      } {
     try {
       const uri = new URL(url);
       const pathParts = uri.pathname.split('/');
@@ -687,7 +700,7 @@ export class Storage {
 
       if (jwtIndex <= 0 || jwtIndex >= pathParts.length) {
         return {
-          info: undefined,
+          data: undefined,
           error: new Error('Invalid URL format'),
         };
       }
@@ -698,7 +711,7 @@ export class Storage {
       const jwtParts = jwt.split('.');
       if (jwtParts.length !== 3) {
         return {
-          info: undefined,
+          data: undefined,
           error: new Error('Invalid JWT format'),
         };
       }
@@ -715,18 +728,18 @@ export class Storage {
       } = JSON.parse(payloadJson);
 
       return {
-        info: {
-          bucketName: payload.bn,
+        data: {
+          bucket: payload.bn,
           key: payload.k,
           cacheTtl: payload.cttl,
           expiresIn: payload.exp ? payload.exp - payload.iat : undefined,
         },
-        error: null,
+        error: undefined,
       };
     } catch (error) {
       return {
-        info: undefined,
-        error,
+        data: undefined,
+        error: error as Error,
       };
     }
   }
