@@ -654,4 +654,80 @@ export class Storage {
       .post({ expiresIn, cacheTtl })
       .json<{ url: string }>();
   }
+
+  /**
+   * Resolves a signed public URL to extract bucket and key information.
+   *
+   * This method parses a signed public URL to retrieve the bucket name, file key,
+   * cache TTL, and expiration time. It is useful for validating and extracting
+   * information from signed URLs before using them.
+   *
+   * @param url - The signed public URL to resolve
+   * @returns An object containing bucket name, key, cache TTL, expiration time, or an error
+   *
+   * @throws {Error} If the URL format is invalid or cannot be parsed
+   *
+   * @example Resolve a signed public URL
+   * ```typescript
+   * const result = sdk.storage.resolveSignedPublicUrl('https://example.com/public/bucket/file.jwt');
+   *
+   * if (result.error) {
+   *   console.error('Failed to resolve URL:', result.error);
+   * } else {
+   *   console.log('Bucket:', result.info.bucketName);
+   *   console.log('Key:', result.info.key);
+   * }
+   * ```
+   */
+  resolveSignedPublicUrl(url: string) {
+    try {
+      const uri = new URL(url);
+      const pathParts = uri.pathname.split('/');
+      const jwtIndex = pathParts.findIndex(part => part === 'public') + 1;
+
+      if (jwtIndex <= 0 || jwtIndex >= pathParts.length) {
+        return {
+          info: undefined,
+          error: new Error('Invalid URL format'),
+        };
+      }
+
+      const jwt = pathParts[jwtIndex];
+
+      // JWT format: header.payload.signature
+      const jwtParts = jwt.split('.');
+      if (jwtParts.length !== 3) {
+        return {
+          info: undefined,
+          error: new Error('Invalid JWT format'),
+        };
+      }
+
+      // Decode payload
+      const payloadBase64 = jwtParts[1];
+      const payloadJson = atob(payloadBase64);
+      const payload: {
+        bn: string;
+        k: string;
+        cttl: number;
+        iat: number;
+        exp?: number;
+      } = JSON.parse(payloadJson);
+
+      return {
+        info: {
+          bucketName: payload.bn,
+          key: payload.k,
+          cacheTtl: payload.cttl,
+          expiresIn: payload.exp ? payload.exp - payload.iat : undefined,
+        },
+        error: null,
+      };
+    } catch (error) {
+      return {
+        info: undefined,
+        error,
+      };
+    }
+  }
 }
