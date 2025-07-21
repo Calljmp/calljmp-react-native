@@ -154,12 +154,12 @@ export class Signal {
    */
 
   async connect(): Promise<void> {
-    if (this._connectionPromise) {
-      return this._connectionPromise;
+    if (this._ws?.readyState === WebSocket.OPEN) {
+      return;
     }
 
-    if (this._ws) {
-      return;
+    if (this._connectionPromise) {
+      return this._connectionPromise;
     }
 
     this._connectionPromise = this._performConnect();
@@ -259,7 +259,10 @@ export class Signal {
       id: message.id || (await Signal.messageId()),
     } as Message;
 
-    if (this._autoConnect && !this._ws) {
+    if (
+      this._autoConnect &&
+      (!this._ws || this._ws.readyState === WebSocket.CLOSED)
+    ) {
       await this.connect();
     }
 
@@ -267,8 +270,10 @@ export class Signal {
   }
 
   private _send(message: SignalMessage) {
-    if (!this._ws) {
-      throw new Error('WebSocket connection is not available');
+    if (!this._ws || this._ws.readyState !== WebSocket.OPEN) {
+      throw new Error(
+        `Cannot send message, WebSocket is not connected: ${this._ws?.readyState || 'unknown'}`
+      );
     }
     const data = JSON.stringify(message);
     this._ws.send(data);
@@ -279,7 +284,7 @@ export class Signal {
    * @returns true if WebSocket is connected and ready
    */
   get connected() {
-    return !!this._ws && !this._connectionPromise;
+    return this._ws?.readyState === WebSocket.OPEN;
   }
 
   /**
