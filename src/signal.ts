@@ -75,7 +75,7 @@ export interface SignalLock {
  * ## Features
  *
  * - **Automatic Connection Management**: Connects and disconnects automatically based on usage
- * - **Message Buffering**: Queues messages when disconnected and sends them when reconnected
+ * - **Sequential Message Sending**: Guarantees all messages are sent in order, one at a time
  * - **Robust Reconnection**: Exponential backoff retry logic with configurable limits
  * - **Component Locking**: Allows multiple components to share the same connection efficiently
  * - **Concurrent Connection Safety**: Multiple connection attempts are properly coordinated
@@ -119,6 +119,7 @@ export class Signal {
   private _autoDisconnectTimeout: NodeJS.Timeout | null = null;
   private _autoDisconnectDelay = 60_000;
   private _connectionPromise: Promise<void> | null = null;
+  private _sendQueue: Promise<void> = Promise.resolve();
 
   constructor(
     private _config: Config,
@@ -230,6 +231,7 @@ export class Signal {
    *
    * Sends a message to the Calljmp service. If auto-connect is enabled and
    * the connection is not available, it will automatically connect first.
+   * All messages are sent sequentially to guarantee order.
    *
    * @param message - The message to send (id will be auto-generated if not provided)
    * @returns Promise that resolves when the message is sent
@@ -259,14 +261,14 @@ export class Signal {
       id: message.id || (await Signal.messageId()),
     } as Message;
 
-    if (
-      this._autoConnect &&
-      (!this._ws || this._ws.readyState === WebSocket.CLOSED)
-    ) {
-      await this.connect();
-    }
+    this._sendQueue = this._sendQueue.then(async () => {
+      if (this._autoConnect) {
+        await this.connect();
+      }
+      this._send(msg);
+    });
 
-    this._send(msg);
+    return this._sendQueue;
   }
 
   private _send(message: SignalMessage) {
@@ -512,7 +514,12 @@ export class Signal {
    * ```
    */
   async dispose(): Promise<void> {
-    // Cancel any pending connection attempt
+    try {
+      await this._sendQueue;
+    } catch {
+      // Ignore send errors during disposal
+    }
+
     if (this._connectionPromise) {
       try {
         await this._connectionPromise;
@@ -526,5 +533,6 @@ export class Signal {
     this._messageHandlers.clear();
     this._locks.clear();
     this._clearAutoDisconnect();
+    this._sendQueue = Promise.resolve();
   }
 }
