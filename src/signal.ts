@@ -154,12 +154,12 @@ export class Signal {
    */
 
   async connect(): Promise<void> {
-    if (this._ws?.readyState === WebSocket.OPEN) {
-      return;
-    }
-
     if (this._connectionPromise) {
       return this._connectionPromise;
+    }
+
+    if (this._ws) {
+      return;
     }
 
     this._connectionPromise = this._performConnect();
@@ -259,10 +259,7 @@ export class Signal {
       id: message.id || (await Signal.messageId()),
     } as Message;
 
-    if (
-      this._autoConnect &&
-      (!this._ws || this._ws.readyState === WebSocket.CLOSED)
-    ) {
+    if (this._autoConnect && !this._ws) {
       await this.connect();
     }
 
@@ -270,7 +267,7 @@ export class Signal {
   }
 
   private _send(message: SignalMessage) {
-    if (!this._ws || this._ws.readyState !== WebSocket.OPEN) {
+    if (!this._ws) {
       throw new Error('WebSocket connection is not available');
     }
     const data = JSON.stringify(message);
@@ -282,7 +279,7 @@ export class Signal {
    * @returns true if WebSocket is connected and ready
    */
   get connected() {
-    return this._ws?.readyState === WebSocket.OPEN;
+    return !!this._ws && !this._connectionPromise;
   }
 
   /**
@@ -324,8 +321,10 @@ export class Signal {
 
   private _attemptReconnect() {
     this._reconnectAttempts++;
-    const delay =
-      this._reconnectDelay * Math.pow(2, this._reconnectAttempts - 1);
+    const delay = Math.min(
+      this._reconnectDelay * 2 ** (this._reconnectAttempts - 1),
+      30000
+    );
     setTimeout(() => {
       this.connect().catch(error => {
         console.error('Reconnection failed:', error);
