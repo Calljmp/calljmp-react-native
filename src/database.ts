@@ -315,15 +315,6 @@ export class Database {
 export type DatabaseRowId = SignalDatabaseRowId;
 export type DatabaseRow = SignalDatabaseRow;
 
-/**
- * Path template for database observations with autocomplete support
- * @public
- */
-export type DatabaseObservePath<Table extends string = string> =
-  | `${Table}.insert`
-  | `${Table}.update`
-  | `${Table}.delete`;
-
 export interface DatabaseSubscriptionInsertHandler<T = DatabaseRow> {
   (event: { rows: T[] }): Promise<void> | void;
 }

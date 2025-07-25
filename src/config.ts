@@ -74,6 +74,23 @@ export interface Config {
   };
 
   /**
+   * Configuration for real-time features like WebSocket connections.
+   */
+  realtime?: {
+    /**
+     * Delay in seconds before automatically disconnecting idle WebSocket connections. 0 means no auto-disconnect.
+     * @defaultValue 60
+     */
+    autoDisconnectDelay?: number;
+    /**
+     * Interval in seconds for sending heartbeat messages to keep the WebSocket connection alive. 0 means no heartbeat.
+     * Setting this to non-zero value is recommended for long-lived connections but can incur additional costs.
+     * @defaultValue 0
+     */
+    heartbeatInterval?: number;
+  };
+
+  /**
    * Development mode configuration for testing and debugging.
    * When enabled, allows bypassing certain security checks and using local endpoints.
    */

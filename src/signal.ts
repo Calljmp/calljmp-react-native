@@ -117,7 +117,7 @@ export class Signal {
     new Map();
   private _locks: Map<string, SignalLock> = new Map();
   private _autoDisconnectTimeout: NodeJS.Timeout | null = null;
-  private _autoDisconnectDelay = 60_000;
+  private _heartbeatInterval: NodeJS.Timeout | null = null;
   private _connectionPromise: Promise<void> | null = null;
   private _sendQueue: Promise<void> = Promise.resolve();
 
@@ -189,6 +189,7 @@ export class Signal {
           this._reconnectAttempts = 0;
           this._reconnectDelay = 1000;
           this._scheduleAutoDisconnect();
+          this._scheduleHeartbeat();
           resolve();
         };
 
@@ -199,6 +200,7 @@ export class Signal {
         this._ws.onclose = event => {
           this._ws = null;
           this._clearAutoDisconnect();
+          this._clearHeartbeat();
 
           // Reconnect if the connection was not closed cleanly and we haven't exceeded max attempts
           if (
@@ -224,6 +226,7 @@ export class Signal {
       this._ws = null;
     }
     this._clearAutoDisconnect();
+    this._clearHeartbeat();
   }
 
   /**
@@ -476,14 +479,19 @@ export class Signal {
   private _scheduleAutoDisconnect(): void {
     this._clearAutoDisconnect();
 
-    if (this.connected && this._locks.size === 0) {
+    const delay =
+      this._config.realtime?.autoDisconnectDelay === undefined
+        ? 60_000
+        : this._config.realtime.autoDisconnectDelay * 1000;
+
+    if (this.connected && this._locks.size === 0 && delay > 0) {
       this._autoDisconnectTimeout = setTimeout(() => {
         if (this.connected && this._locks.size === 0) {
           this._disconnect().catch(error => {
             console.error('Auto-disconnect failed:', error);
           });
         }
-      }, this._autoDisconnectDelay);
+      }, delay);
     }
   }
 
@@ -491,6 +499,39 @@ export class Signal {
     if (this._autoDisconnectTimeout) {
       clearTimeout(this._autoDisconnectTimeout);
       this._autoDisconnectTimeout = null;
+    }
+  }
+
+  private _scheduleHeartbeat(): void {
+    this._clearHeartbeat();
+
+    const interval =
+      this._config.realtime?.heartbeatInterval === undefined
+        ? 0
+        : this._config.realtime.heartbeatInterval * 1000;
+
+    if (this.connected && interval > 0) {
+      const heartbeat = async () => {
+        await this.send({ type: SignalMessageType.Ping });
+      };
+
+      this._heartbeatInterval = setInterval(() => {
+        if (this.connected) {
+          heartbeat().catch(error => {
+            console.error('Heartbeat failed:', error);
+            this._disconnect().catch(() => {
+              console.error('Failed to disconnect after heartbeat error');
+            });
+          });
+        }
+      }, interval);
+    }
+  }
+
+  private _clearHeartbeat(): void {
+    if (this._heartbeatInterval) {
+      clearInterval(this._heartbeatInterval);
+      this._heartbeatInterval = null;
     }
   }
 
@@ -533,6 +574,7 @@ export class Signal {
     this._messageHandlers.clear();
     this._locks.clear();
     this._clearAutoDisconnect();
+    this._clearHeartbeat();
     this._sendQueue = Promise.resolve();
   }
 }

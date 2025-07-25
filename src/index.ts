@@ -60,5 +60,4 @@ export type {
   DatabaseSubscriptionDeleteHandler,
   DatabaseSubscription,
   DatabaseSubscriptionEvent,
-  DatabaseObservePath,
 } from './database';
