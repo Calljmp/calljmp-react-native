@@ -7,6 +7,7 @@
 
 import { Platform } from 'react-native';
 import NativeDevice from './specs/NativeCalljmpDevice';
+import { Config } from './config';
 
 /**
  * Provides device attestation APIs for iOS App Attestation and Android Play Integrity verification.
@@ -83,22 +84,16 @@ export class Attestation {
    */
   constructor({
     keyId = null,
-    android,
-    development,
+    config,
   }: {
     keyId?: string | null;
-    android?: {
-      cloudProjectNumber?: number;
-    };
-    development?: {
-      enabled?: boolean;
-    };
-  } = {}) {
+    config: Config;
+  }) {
     this._keyId = keyId;
 
     if (Platform.OS === 'android') {
-      this._disableAndroidAttestation = development?.enabled ?? false;
-      this._cloudProjectNumber = android?.cloudProjectNumber ?? null;
+      this._disableAndroidAttestation = config.development?.enabled ?? false;
+      this._cloudProjectNumber = config.android?.cloudProjectNumber ?? null;
     }
   }
 

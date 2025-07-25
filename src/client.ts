@@ -132,7 +132,7 @@ export class Calljmp {
     };
 
     const store = new SecureStore();
-    const attestation = new Attestation(config);
+    const attestation = new Attestation({ config: finalConfig });
     const signal = new Signal(finalConfig, store);
 
     this.integrity = new Integrity(finalConfig, attestation, store);
