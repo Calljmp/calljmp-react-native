@@ -1,16 +1,15 @@
 {
   "name": "@calljmp/react-native",
-  "version": "0.0.44",
+  "version": "0.0.45",
   "description": "Calljmp is a secure backend-as-a-service (BaaS) for React Native apps, with auth, storage, SQL access, and attestation support.",
   "main": "./src/index.ts",
-  "peerDependencies": {
-    "react": "*",
-    "react-native": "*"
-  },
   "keywords": [
     "react-native",
-    "ios",
-    "android"
+    "expo",
+    "storage",
+    "function",
+    "sqlite",
+    "ai"
   ],
   "repository": {
     "type": "git",
@@ -28,8 +27,17 @@
     "jsSrcsDir": "src/specs",
     "android": {
       "javaPackageName": "com.calljmp"
-    },
-    "includesGeneratedCode": true
+    }
+  },
+  "peerDependencies": {
+    "react": "*",
+    "react-native": "*"
+  },
+  "devDependencies": {
+    "@nx/rollup": "20.4.0",
+    "@react-native/babel-preset": "^0.81.0",
+    "@tsconfig/node-lts": "^22.0.2",
+    "rollup": "^4.14.0"
   },
   "nx": {
     "name": "sdk-react-native",
@@ -46,21 +54,10 @@
           ]
         }
       },
-      "codegen": {
-        "executor": "nx:run-commands",
-        "options": {
-          "cwd": ".",
-          "commands": [
-            "node ./node_modules/react-native/scripts/generate-codegen-artifacts.js --path ./libs/sdk-react-native --outputPath ./libs/sdk-react-native/ios/generated/ --targetPlatform ios",
-            "node ./node_modules/react-native/scripts/generate-codegen-artifacts.js --path ./libs/sdk-react-native --outputPath ./libs/sdk-react-native/android/generated/ --targetPlatform android"
-          ]
-        }
-      },
       "publish:git": {
         "executor": "nx:run-commands",
         "dependsOn": [
           "common:sync",
-          "codegen",
           "typecheck"
         ],
         "options": {
@@ -82,10 +79,20 @@
           ]
         }
       },
+      "build:plugin": {
+        "executor": "nx:run-commands",
+        "options": {
+          "cwd": "libs/sdk-react-native",
+          "commands": [
+            "tsc --build plugin"
+          ]
+        }
+      },
       "build": {
         "executor": "nx:run-commands",
         "dependsOn": [
-          "bundle"
+          "bundle",
+          "build:plugin"
         ],
         "options": {
           "cwd": "libs/sdk-react-native/dist",
@@ -100,8 +107,7 @@
           "{options.outputPath}"
         ],
         "dependsOn": [
-          "common:sync",
-          "codegen"
+          "common:sync"
         ],
         "options": {
           "outputPath": "libs/sdk-react-native/dist",
@@ -149,6 +155,11 @@
               "glob": "libs/sdk-react-native/Calljmp.podspec",
               "input": ".",
               "output": "."
+            },
+            {
+              "glob": "libs/sdk-react-native/plugin/build/**",
+              "input": ".",
+              "output": "./plugin/"
             }
           ]
         }

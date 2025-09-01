@@ -1,4 +1,4 @@
-#import "generated/RNCalljmpSpec/RNCalljmpSpec.h"
+#import <RNCalljmpSpec/RNCalljmpSpec.h>
 
 NS_ASSUME_NONNULL_BEGIN
 

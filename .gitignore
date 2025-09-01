@@ -9,5 +9,4 @@ tmp
 out-tsc
 build
 
-# tools
-tools
+node_modules
