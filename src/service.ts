@@ -5,13 +5,13 @@
  * enabling integration with custom backend logic and third-party services.
  */
 
-import { AccessToken } from './access';
 import { Config } from './config';
 import { Integrity } from './integrity';
 import { access } from './middleware/access';
 import { context } from './middleware/context';
 import { request } from './request';
 import { SecureStore } from './secure-store';
+import { AccessResolver } from './utils/access-resolver';
 
 /**
  * Provides access to backend service APIs with automatic authentication and token management.
@@ -38,6 +38,8 @@ import { SecureStore } from './secure-store';
  * @public
  */
 export class Service {
+  private _access: AccessResolver;
+
   /**
    * Creates a new Service instance.
    *
@@ -49,67 +51,10 @@ export class Service {
    */
   constructor(
     private _config: Config,
-    private _integrity: Integrity,
+    integrity: Integrity,
     private _store: SecureStore
-  ) {}
-
-  /**
-   * Resolves and returns a valid access token, automatically refreshing if needed.
-   *
-   * This internal method handles the complex logic of access token management:
-   * - Checks if a stored token exists and is valid
-   * - Automatically refreshes expired tokens through device integrity attestation
-   * - Handles token parsing and validation errors
-   *
-   * @returns A promise that resolves to an object containing the access token or an error
-   *
-   * @internal
-   */
-  private async _resolveAccess() {
-    let token = await this._store.get('accessToken');
-    if (token) {
-      const { data: accessToken } = AccessToken.tryParse(token);
-      if (accessToken && accessToken.isValid) {
-        return {
-          data: accessToken,
-          error: undefined,
-        };
-      }
-      await this._store.delete('accessToken');
-    }
-
-    const result = await this._integrity.access();
-    if (result.error) {
-      return result;
-    }
-
-    token = await this._store.get('accessToken');
-    if (!token) {
-      return {
-        data: undefined,
-        error: new Error('Failed to get access token'),
-      };
-    }
-
-    const { data: accessToken, error } = AccessToken.tryParse(token);
-    if (!accessToken || error) {
-      return {
-        data: undefined,
-        error: new Error('Failed to parse access token', { cause: error }),
-      };
-    }
-
-    if (accessToken.isExpired) {
-      return {
-        data: undefined,
-        error: new Error('Access token is expired'),
-      };
-    }
-
-    return {
-      data: accessToken,
-      error: undefined,
-    };
+  ) {
+    this._access = new AccessResolver(integrity, this._store);
   }
 
   /**
@@ -177,7 +122,7 @@ export class Service {
    * - Returns user information embedded in the token claims
    */
   async accessToken() {
-    const access = await this._resolveAccess();
+    const access = await this._access.resolve();
     if (access.error) {
       return access;
     }

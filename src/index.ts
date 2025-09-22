@@ -61,3 +61,11 @@ export type {
   DatabaseSubscription,
   DatabaseSubscriptionEvent,
 } from './database';
+
+export { CalljmpProvider } from './context';
+
+export { useChat } from './ai/context/chat';
+export { useTextGeneration, useTextStream } from './ai/context/text';
+
+import * as ai from './ai';
+export { ai };

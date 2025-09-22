@@ -16,6 +16,7 @@ import { Integrity } from './integrity';
 import { Storage } from './storage';
 import { Signal } from './signal';
 import { Realtime } from './realtime';
+import { AI } from './ai';
 
 /**
  * Main entry point for the Calljmp React Native SDK.
@@ -97,6 +98,12 @@ export class Calljmp {
   public readonly realtime: Realtime;
 
   /**
+   * AI API for interacting with machine learning models and services.
+   * @readonly
+   */
+  public readonly ai: AI;
+
+  /**
    * Creates a new Calljmp SDK instance with the specified configuration.
    *
    * @param config - Optional configuration for endpoints, development mode, and platform-specific settings
@@ -142,5 +149,6 @@ export class Calljmp {
     this.service = new Service(finalConfig, this.integrity, store);
     this.storage = new Storage(finalConfig, store);
     this.realtime = new Realtime(signal);
+    this.ai = new AI(finalConfig, this.integrity, store);
   }
 }

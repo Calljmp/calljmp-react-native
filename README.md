@@ -11,6 +11,7 @@
 
 ### Key Features
 
+- **AI text generation** and chat capabilities
 - **Authentication** via **App Attestation (iOS)** and **Play Integrity (Android)**
 - **Full SQLite database access** with no restrictions - run raw SQL
 - **Secure cloud storage** with organized bucket management

@@ -291,11 +291,11 @@ export class HttpResponse {
  * @public
  */
 export class HttpResult {
-  private _pendingResponse: Promise<HttpResponse>;
+  private _futureResponse: () => Promise<HttpResponse>;
   private _resolvedResponse: HttpResponse | null = null;
 
-  constructor(response: Promise<HttpResponse>) {
-    this._pendingResponse = response;
+  constructor(response: () => Promise<HttpResponse>) {
+    this._futureResponse = response;
   }
 
   /**
@@ -324,7 +324,7 @@ export class HttpResult {
    */
   async call() {
     if (!this._resolvedResponse) {
-      this._resolvedResponse = await this._pendingResponse;
+      this._resolvedResponse = await this._futureResponse();
     }
     return this._resolvedResponse;
   }
@@ -556,6 +556,7 @@ export class HttpRequest {
   private _headers?: Record<string, string>;
   private _body?: HttpRequestBody;
   private _middlewares: HttpRequestMiddleware[] = [];
+  private _signal?: AbortSignal;
 
   constructor(url: string | Promise<string>) {
     this._url = typeof url === 'string' ? Promise.resolve(url) : url;
@@ -730,6 +731,29 @@ export class HttpRequest {
     return this;
   }
 
+  /**
+   * Sets the abort signal for the request.
+   *
+   * This allows the request to be cancelled using the AbortController.
+   *
+   * @param signal - The AbortSignal to associate with the request
+   * @returns The current HttpRequest instance for method chaining
+   *
+   * @example
+   * ```typescript
+   * const controller = new AbortController();
+   * request('/api/data')
+   *   .signal(controller.signal)
+   *   .get();
+   * ```
+   *
+   * @public
+   */
+  signal(signal: AbortSignal): HttpRequest {
+    this._signal = signal;
+    return this;
+  }
+
   private async _executeRequest(request: HttpRequest): Promise<HttpResponse> {
     const params = new URLSearchParams();
     if (request._params) {
@@ -763,6 +787,7 @@ export class HttpRequest {
       headers: request._headers,
       method: request._method,
       body,
+      signal: request._signal,
     });
 
     return new HttpResponse(response);
@@ -822,7 +847,7 @@ export class HttpRequest {
    */
   post<T>(data: HttpRequestBody | JsonLike<T> = {}): HttpResult {
     this._method = 'POST';
-    return new HttpResult(this._withBody(data)._call());
+    return new HttpResult(() => this._withBody(data)._call());
   }
 
   /**
@@ -850,7 +875,7 @@ export class HttpRequest {
    */
   put<T>(data: HttpRequestBody | JsonLike<T> = {}): HttpResult {
     this._method = 'PUT';
-    return new HttpResult(this._withBody(data)._call());
+    return new HttpResult(() => this._withBody(data)._call());
   }
 
   /**
@@ -874,7 +899,7 @@ export class HttpRequest {
    */
   patch<T>(data: HttpRequestBody | JsonLike<T> = {}): HttpResult {
     this._method = 'PATCH';
-    return new HttpResult(this._withBody(data)._call());
+    return new HttpResult(() => this._withBody(data)._call());
   }
 
   /**
@@ -899,7 +924,7 @@ export class HttpRequest {
    */
   delete(): HttpResult {
     this._method = 'DELETE';
-    return new HttpResult(this._call());
+    return new HttpResult(() => this._call());
   }
 
   /**
@@ -923,7 +948,7 @@ export class HttpRequest {
    */
   get(): HttpResult {
     this._method = 'GET';
-    return new HttpResult(this._call());
+    return new HttpResult(() => this._call());
   }
 
   /**
@@ -950,7 +975,7 @@ export class HttpRequest {
    */
   head(): HttpResult {
     this._method = 'HEAD';
-    return new HttpResult(this._call());
+    return new HttpResult(() => this._call());
   }
 }
 
