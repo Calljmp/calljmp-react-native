@@ -29,6 +29,11 @@ export function useChat<
   const isMountedRef = useRef(true);
   const currentRequestIdRef = useRef<string | null>(null);
   const retryTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const onAbortRef = useRef(options.onAbort);
+
+  useEffect(() => {
+    onAbortRef.current = options.onAbort;
+  }, [options.onAbort]);
 
   const { stream, abort: streamAbort } = useTextStream(
     {
@@ -128,8 +133,8 @@ export function useChat<
         if (!isMountedRef.current || currentRequestIdRef.current !== requestId)
           return;
         if (e.name === 'AbortError') {
-          if (options.onAbort) {
-            options.onAbort();
+          if (onAbortRef.current) {
+            onAbortRef.current();
           }
         } else {
           setError(e as Error);
@@ -163,7 +168,6 @@ export function useChat<
       stream,
       prepareInputs,
       options.model,
-      options.onAbort,
       options.retryCount,
       options.timeoutMs,
     ]
@@ -180,12 +184,12 @@ export function useChat<
     if (isMountedRef.current && currentRequestIdRef.current) {
       setIsSending(false);
       setPartialMessage(null);
-      if (options.onAbort) {
-        options.onAbort();
+      if (onAbortRef.current) {
+        onAbortRef.current();
       }
       currentRequestIdRef.current = null;
     }
-  }, [streamAbort, options.onAbort]);
+  }, [streamAbort]);
 
   useEffect(() => {
     return () => {

@@ -105,7 +105,7 @@ export function useTextGeneration<
         abortControllerRef.current = null;
       }
     },
-    [client.ai, timeoutMs, retryCount]
+    [client.ai.generateText, timeoutMs, retryCount]
   );
 
   const abort = useCallback(() => {
@@ -222,7 +222,7 @@ export function useTextStream<
         abortControllerRef.current = null;
       }
     },
-    [client.ai, accumulate, timeoutMs]
+    [client.ai.streamText, accumulate, timeoutMs]
   );
 
   const streamOnce = useCallback(
