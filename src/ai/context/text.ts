@@ -27,6 +27,13 @@ export function useTextGeneration<
   const abortControllerRef = useRef<AbortController | null>(null);
   const isMountedRef = useRef(true);
   const currentRequestIdRef = useRef<string | null>(null);
+  const initialOptionsRef = useRef(initialOptions);
+  const onAbortRef = useRef(onAbort);
+
+  useEffect(() => {
+    initialOptionsRef.current = initialOptions;
+    onAbortRef.current = onAbort;
+  }, [initialOptions, onAbort]);
 
   const { client } = useCalljmp();
 
@@ -39,11 +46,7 @@ export function useTextGeneration<
 
   const generate = useCallback(
     async (options: { model?: M } & ModelInputs<M>, retry = 0) => {
-      if (loading && retry === 0)
-        return {
-          error: new Error('CONCURRENT'),
-          data: undefined,
-        };
+      console.log('useTextGeneration: Starting generation', { options, retry });
       setLoading(true);
       setError(null);
       setResult(null);
@@ -61,35 +64,37 @@ export function useTextGeneration<
 
       try {
         const response = await client.ai.generateText({
-          ...initialOptions,
+          ...initialOptionsRef.current,
           ...options,
           signal: controller.signal,
         });
         if (isMountedRef.current && currentRequestIdRef.current === requestId) {
           if (response.error) {
+            console.log('useTextGeneration: Error in response', response.error);
             setError(response.error);
           } else {
+            console.log('useTextGeneration: Success', response.data);
             setResult(response.data);
           }
         }
         return response;
       } catch (e: any) {
+        console.log('useTextGeneration: Caught error', e);
         if (isMountedRef.current && currentRequestIdRef.current === requestId) {
           if (e.name !== 'AbortError') {
             setError(e as Error);
-          } else if (onAbort) {
-            onAbort();
+          } else if (onAbortRef.current) {
+            onAbortRef.current();
           }
         }
         if (retry < retryCount && e.name !== 'AbortError') {
+          console.log('useTextGeneration: Retrying', { retry: retry + 1 });
           await new Promise(resolve => setTimeout(resolve, 1000 * (retry + 1)));
           return generate(options, retry + 1);
         }
-        return {
-          error: e as Error,
-          data: undefined,
-        };
+        return { error: e as Error, data: undefined };
       } finally {
+        console.log('useTextGeneration: Finishing generation');
         if (isMountedRef.current && currentRequestIdRef.current === requestId) {
           if (timeoutId) clearTimeout(timeoutId);
           setLoading(false);
@@ -100,18 +105,22 @@ export function useTextGeneration<
         abortControllerRef.current = null;
       }
     },
-    [client.ai, initialOptions, loading, timeoutMs, onAbort, retryCount]
+    [client.ai, timeoutMs, retryCount]
   );
 
   const abort = useCallback(() => {
+    console.log('useTextGeneration: Aborting');
     abortControllerRef.current?.abort();
   }, []);
 
   useEffect(() => {
-    if (initialOptions?.prompt && !loading) {
-      generate({ prompt: initialOptions.prompt });
+    const prompt = initialOptionsRef.current?.prompt;
+    if (!prompt) {
+      return;
     }
-  }, [generate, initialOptions?.prompt, loading]);
+    console.log('useTextGeneration: Auto-generating with initial prompt');
+    generate({ prompt });
+  }, [generate]);
 
   useEffect(() => {
     return () => abort();
@@ -139,6 +148,13 @@ export function useTextStream<
   const abortControllerRef = useRef<AbortController | null>(null);
   const isMountedRef = useRef(true);
   const currentRequestIdRef = useRef<string | null>(null);
+  const initialOptionsRef = useRef(initialOptions);
+  const onAbortRef = useRef(onAbort);
+
+  useEffect(() => {
+    initialOptionsRef.current = initialOptions;
+    onAbortRef.current = onAbort;
+  }, [initialOptions, onAbort]);
 
   const { client } = useCalljmp();
 
@@ -153,7 +169,6 @@ export function useTextStream<
     async function* (
       options: { model?: M } & ModelInputs<M>
     ): AsyncGenerator<TextStreamEvent, void, unknown> {
-      if (loading) return;
       setLoading(true);
       setError(null);
       if (accumulate) setStreamData('');
@@ -171,7 +186,7 @@ export function useTextStream<
 
       try {
         const iterator = client.ai.streamText({
-          ...initialOptions,
+          ...initialOptionsRef.current,
           ...options,
         });
         for await (const event of iterator) {
@@ -191,8 +206,8 @@ export function useTextStream<
         if (isMountedRef.current && currentRequestIdRef.current === requestId) {
           if (e.name !== 'AbortError') {
             setError(e as Error);
-          } else if (onAbort) {
-            onAbort();
+          } else if (onAbortRef.current) {
+            onAbortRef.current();
           }
         }
         throw e;
@@ -207,17 +222,20 @@ export function useTextStream<
         abortControllerRef.current = null;
       }
     },
-    [client.ai, initialOptions, accumulate, loading, timeoutMs, onAbort]
+    [client.ai, accumulate, timeoutMs]
   );
 
   const streamOnce = useCallback(
     async (options: { model?: M } & ModelInputs<M>) => {
-      for await (const _ of stream(options)) {
-        // consume
+      let lastMessage = '';
+      for await (const event of stream(options)) {
+        if (accumulate && event.type === 'message') {
+          lastMessage += event.content;
+        }
       }
-      return accumulate ? streamData : undefined;
+      return accumulate ? lastMessage : undefined;
     },
-    [stream, streamData, accumulate]
+    [stream, accumulate]
   );
 
   const abort = useCallback(() => {
@@ -225,25 +243,22 @@ export function useTextStream<
   }, []);
 
   useEffect(() => {
-    if (initialOptions?.prompt && !loading) {
-      if (accumulate) {
-        streamOnce({ prompt: initialOptions.prompt });
-      } else {
-        stream({ prompt: initialOptions.prompt });
-      }
+    const prompt = initialOptionsRef.current?.prompt;
+    if (!prompt) {
+      return;
     }
-  }, [stream, streamOnce, initialOptions?.prompt, loading, accumulate]);
+    if (accumulate) {
+      streamOnce({ prompt });
+    } else {
+      (async () => {
+        for await (const _ of stream({ prompt })) {
+          // consume
+        }
+      })();
+    }
+  }, [streamOnce, stream, accumulate]);
 
-  useEffect(() => {
-    return () => abort();
-  }, [abort]);
+  useEffect(() => () => abort(), [abort]);
 
-  return {
-    streamData,
-    loading,
-    error,
-    stream,
-    streamOnce,
-    abort,
-  };
+  return { streamData, loading, error, stream, streamOnce, abort };
 }
