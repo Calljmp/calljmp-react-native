@@ -1,0 +1,14 @@
+{
+  "extends": "@tsconfig/node-lts/tsconfig",
+  "compilerOptions": {
+    "outDir": "build",
+    "rootDir": "src",
+    "target": "es6",
+    "allowJs": true,
+    "checkJs": false,
+    "declaration": true
+  },
+  "include": [
+    "./src"
+  ]
+}

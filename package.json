@@ -1,6 +1,6 @@
 {
   "name": "@calljmp/react-native",
-  "version": "0.0.49",
+  "version": "0.0.50",
   "description": "Calljmp is a secure backend-as-a-service (BaaS) for React Native apps, with auth, storage, SQL access, and attestation support.",
   "main": "./dist/index.cjs.js",
   "keywords": [
@@ -33,6 +33,9 @@
     "react": ">=18.2.0",
     "react-native": ">=0.72.0"
   },
+  "devPeerDependencies": {
+    "@babel/core": "^7.0.0"
+  },
   "peerDependenciesMeta": {
     "react-native": {
       "optional": false
@@ -48,9 +51,17 @@
       "require": "./dist/index.cjs.js",
       "default": "./dist/index.cjs.js"
     },
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./app.plugin.js": "./dist/app.plugin.js",
+    "./babel-plugin": {
+      "types": "./dist/lib/babel-plugin.d.ts",
+      "import": "./dist/lib/babel-plugin.js",
+      "require": "./dist/lib/babel-plugin.js",
+      "default": "./dist/lib/babel-plugin.js"
+    }
   },
   "devDependencies": {
+    "@babel/types": "^7.28.4",
     "@nx/rollup": "20.4.0",
     "@react-native/babel-preset": "^0.81.0",
     "@tsconfig/node-lts": "^22.0.2",
@@ -96,20 +107,28 @@
           ]
         }
       },
+      "build:babel:plugin": {
+        "executor": "nx:run-commands",
+        "options": {
+          "cwd": "libs/sdk-react-native",
+          "commands": [
+            "tsc --build babel-plugin"
+          ]
+        }
+      },
       "build:plugin": {
         "executor": "nx:run-commands",
         "options": {
           "cwd": "libs/sdk-react-native",
           "commands": [
-            "tsc --build plugin"
+            "tsc --build expo-plugin"
           ]
         }
       },
       "build": {
         "executor": "nx:run-commands",
         "dependsOn": [
-          "bundle",
-          "build:plugin"
+          "bundle"
         ],
         "options": {
           "cwd": "libs/sdk-react-native/dist",
@@ -124,7 +143,9 @@
           "{options.outputPath}"
         ],
         "dependsOn": [
-          "common:sync"
+          "common:sync",
+          "build:plugin",
+          "build:babel:plugin"
         ],
         "options": {
           "outputPath": "libs/sdk-react-native/dist",
@@ -174,14 +195,19 @@
               "output": "."
             },
             {
-              "glob": "libs/sdk-react-native/plugin/build/**",
-              "input": ".",
-              "output": "./plugin/"
-            },
-            {
               "glob": "libs/sdk-react-native/src/specs/**/*.ts",
               "input": ".",
               "output": "./src/specs/"
+            },
+            {
+              "glob": "libs/sdk-react-native/expo-plugin/build/**",
+              "input": ".",
+              "output": "./lib/"
+            },
+            {
+              "glob": "libs/sdk-react-native/babel-plugin/build/**",
+              "input": ".",
+              "output": "./lib/"
             }
           ]
         }

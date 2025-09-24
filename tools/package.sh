@@ -19,11 +19,18 @@ jq '.exports = {
     "require": "./index.cjs.js",
     "default": "./index.cjs.js"
   },
-  "./package.json": "./package.json"
+  "./package.json": "./package.json",
+  "./app.plugin.js": "./app.plugin.js",
+  "./babel-plugin": {
+    "types": "./lib/babel-plugin.d.ts",
+    "import": "./lib/babel-plugin.js",
+    "require": "./lib/babel-plugin.js",
+    "default": "./lib/babel-plugin.js"
+  }
 }' "$OUTPUT_JSON" >"$TEMP_JSON" && mv "$TEMP_JSON" "$OUTPUT_JSON"
 
 mv "$OUTPUT_JSON" "$PACKAGE_JSON"
 
-echo "module.exports = require('./plugin/withCalljmp');" >"app.plugin.js"
+echo "module.exports = require('./lib/withCalljmp');" >"app.plugin.js"
 
 rm -rf ./tools

@@ -1,1 +1,1 @@
-module.exports = require('./plugin/build/withCalljmp');
+module.exports = require('./expo-plugin/build/withCalljmp');

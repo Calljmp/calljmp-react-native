@@ -46,7 +46,6 @@ export function useTextGeneration<
 
   const generate = useCallback(
     async (options: { model?: M } & ModelInputs<M>, retry = 0) => {
-      console.log('useTextGeneration: Starting generation', { options, retry });
       setLoading(true);
       setError(null);
       setResult(null);
@@ -70,16 +69,13 @@ export function useTextGeneration<
         });
         if (isMountedRef.current && currentRequestIdRef.current === requestId) {
           if (response.error) {
-            console.log('useTextGeneration: Error in response', response.error);
             setError(response.error);
           } else {
-            console.log('useTextGeneration: Success', response.data);
             setResult(response.data);
           }
         }
         return response;
       } catch (e: any) {
-        console.log('useTextGeneration: Caught error', e);
         if (isMountedRef.current && currentRequestIdRef.current === requestId) {
           if (e.name !== 'AbortError') {
             setError(e as Error);
@@ -88,13 +84,11 @@ export function useTextGeneration<
           }
         }
         if (retry < retryCount && e.name !== 'AbortError') {
-          console.log('useTextGeneration: Retrying', { retry: retry + 1 });
           await new Promise(resolve => setTimeout(resolve, 1000 * (retry + 1)));
           return generate(options, retry + 1);
         }
         return { error: e as Error, data: undefined };
       } finally {
-        console.log('useTextGeneration: Finishing generation');
         if (isMountedRef.current && currentRequestIdRef.current === requestId) {
           if (timeoutId) clearTimeout(timeoutId);
           setLoading(false);
@@ -109,7 +103,6 @@ export function useTextGeneration<
   );
 
   const abort = useCallback(() => {
-    console.log('useTextGeneration: Aborting');
     abortControllerRef.current?.abort();
   }, []);
 
@@ -118,7 +111,6 @@ export function useTextGeneration<
     if (!prompt) {
       return;
     }
-    console.log('useTextGeneration: Auto-generating with initial prompt');
     generate({ prompt });
   }, [generate]);
 
