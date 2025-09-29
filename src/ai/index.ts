@@ -7,36 +7,60 @@ import {
   ModelOutputs,
 } from '../common';
 import { Config } from '../config';
-import { Integrity } from '../integrity';
-import { makeAccess, access } from '../middleware/access';
+import { makeAccess, access, postAccess } from '../middleware/access';
 import { makeContext, context } from '../middleware/context';
 import { request } from '../request';
-import { SecureStore } from '../secure-store';
 import { AccessResolver } from '../utils/access-resolver';
 import EventSource, { DataEvent } from '../utils/event-source';
 import asyncGenerator from '../utils/async-generator';
 import { DefaultTextGenerationModel, TextStreamEvent } from './common';
+import {
+  FlowBuilder,
+  OperatorConfig,
+  OperatorContext,
+  WorkflowConfig,
+  Operator,
+  Workflow,
+  InferInitial,
+  InferOutput,
+} from './workflow';
 
 export type { Message, Model, ModelInputs, ModelOutputs };
 
 export class AI {
-  private readonly _access: AccessResolver;
-
   constructor(
     private _config: Config,
-    integrity: Integrity,
-    private readonly _store: SecureStore
-  ) {
-    this._access = new AccessResolver(integrity, this._store);
-  }
+    private _access: AccessResolver
+  ) {}
 
-  private async _resolveAccess() {
-    const access = await this._access.resolve();
-    return access.data?.toString() || null;
-  }
-
-  private get url() {
+  private get _invokeUrl() {
     return `${this._config.serviceUrl}/ai/invoke`;
+  }
+
+  operator<Input, Output>(
+    run: (context: OperatorContext<Input>) => Output | Promise<Output>,
+    config?: OperatorConfig & { name?: string }
+  ): Operator<Input, Output> {
+    return new Operator(run, config);
+  }
+
+  workflow<F extends FlowBuilder<any, any>>(
+    name: string,
+    description: string,
+    build: (flow: FlowBuilder<any, any>) => F,
+    config?: WorkflowConfig
+  ): Workflow<InferInitial<F>, InferOutput<F>> {
+    const flow = build(new FlowBuilder<unknown, never>());
+    return new Workflow(
+      {
+        config: this._config,
+        access: this._access,
+      },
+      name,
+      description,
+      flow,
+      config
+    );
   }
 
   async generateText<
@@ -50,11 +74,8 @@ export class AI {
     model?: M;
     signal?: AbortSignal;
   } & ModelInputs<M>) {
-    return request(this.url)
-      .use(
-        context(this._config),
-        access(this._store, () => this._resolveAccess())
-      )
+    return request(this._invokeUrl)
+      .use(context(this._config), access(this._config, this._access))
       .$if(!!signal, req => req.signal(signal!))
       .post({
         model: model ?? DefaultTextGenerationModel,
@@ -74,12 +95,12 @@ export class AI {
   }: {
     model?: M;
   } & ModelInputs<M>) {
-    const source = new EventSource(this.url, {
+    const source = new EventSource(this._invokeUrl, {
       withCredentials: true,
       method: 'POST',
       headers: {
         ...makeContext(this._config),
-        ...(await makeAccess(this._store)),
+        ...(await makeAccess(this._config, this._access)),
       },
       body: JSON.stringify({
         model: model ?? DefaultTextGenerationModel,
@@ -93,6 +114,7 @@ export class AI {
 
     source.addEventListener('error', e => {
       if (e.type === 'error') {
+        postAccess(this._config, this._access, e.message);
         controller.error(new Error(e.message));
       } else if (e.type === 'exception') {
         controller.error(e.error);

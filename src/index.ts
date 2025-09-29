@@ -67,5 +67,12 @@ export { CalljmpProvider, useCalljmp } from './context';
 export { useChat } from './ai/context/chat';
 export { useTextGeneration, useTextStream } from './ai/context/text';
 
+export type {
+  Workflow,
+  WorkflowConfig,
+  Operator,
+  OperatorConfig,
+} from './ai/workflow';
+
 import * as ai from './ai';
 export { ai };

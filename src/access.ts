@@ -192,6 +192,31 @@ export class AccessToken {
   }
 
   /**
+   * Checks if the access token is nearing expiration (within 5 minutes).
+   *
+   * This is a convenience method to determine if the token should be refreshed
+   * soon, even if it hasn't fully expired yet.
+   *
+   * @returns True if the token is expiring soon, false otherwise
+   *
+   * @example
+   * ```typescript
+   * const token = AccessToken.parse(jwtString);
+   *
+   * if (token.isExpiring) {
+   *   console.log('Token is expiring soon, consider refreshing');
+   * }
+   * ```
+   *
+   * @public
+   */
+  get isExpiring() {
+    const now = Math.floor(Date.now() / 1000);
+    // Consider token expiring if less than 5 minutes left
+    return this._data.exp < now + 5 * 60;
+  }
+
+  /**
    * Checks if the access token is currently valid (not expired).
    *
    * This is a convenience method that returns the inverse of `isExpired`.

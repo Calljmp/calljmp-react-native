@@ -17,6 +17,7 @@ import { Storage } from './storage';
 import { Signal } from './signal';
 import { Realtime } from './realtime';
 import { AI } from './ai';
+import { AccessResolver } from './utils/access-resolver';
 
 /**
  * Main entry point for the Calljmp React Native SDK.
@@ -80,12 +81,6 @@ export class Calljmp {
   public readonly service: Service;
 
   /**
-   * Device integrity and attestation API for iOS App Attestation and Android Play Integrity.
-   * @readonly
-   */
-  public readonly integrity: Integrity;
-
-  /**
    * Cloud storage API for uploading, downloading, and managing files in storage buckets.
    * @readonly
    */
@@ -140,15 +135,16 @@ export class Calljmp {
 
     const store = new SecureStore();
     const attestation = new Attestation({ config: finalConfig });
-    const signal = new Signal(finalConfig, store);
+    const integrity = new Integrity(finalConfig, attestation);
+    const access = new AccessResolver(integrity, store);
+    const signal = new Signal(finalConfig, access);
 
-    this.integrity = new Integrity(finalConfig, attestation, store);
-    this.users = new Users(finalConfig, attestation, store);
+    this.users = new Users(finalConfig, attestation, access);
     this.project = new Project(finalConfig, attestation);
-    this.database = new Database(finalConfig, store, signal);
-    this.service = new Service(finalConfig, this.integrity, store);
-    this.storage = new Storage(finalConfig, store);
+    this.database = new Database(finalConfig, access, signal);
+    this.service = new Service(finalConfig, access);
+    this.storage = new Storage(finalConfig, access);
     this.realtime = new Realtime(signal);
-    this.ai = new AI(finalConfig, this.integrity, store);
+    this.ai = new AI(finalConfig, access);
   }
 }

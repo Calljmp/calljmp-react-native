@@ -24,6 +24,14 @@ RCT_EXPORT_MODULE(NativeCalljmpDevice);
   return self;
 }
 
+- (void)isSimulator:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject {
+#if TARGET_IPHONE_SIMULATOR
+  resolve(@(YES));
+#else
+  resolve(@(NO));
+#endif
+}
+
 - (void)appleGenerateAttestationKey:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject { 
   if (@available(iOS 14.0, *)) {
     if (![_attestService isSupported]) {

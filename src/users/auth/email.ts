@@ -1,4 +1,5 @@
 import { Auth } from '.';
+import { AccessToken } from '../../access';
 import { Attestation } from '../../attestation';
 import {
   UserAuthenticationPolicy,
@@ -7,10 +8,10 @@ import {
 } from '../../common';
 import { Config } from '../../config';
 import { sha256 } from '../../crypto';
-import { access } from '../../middleware/access';
+import { access, accessSupport } from '../../middleware/access';
 import { context } from '../../middleware/context';
 import { request } from '../../request';
-import { SecureStore } from '../../secure-store';
+import { AccessResolver } from '../../utils/access-resolver';
 
 /**
  * Provides email-based authentication methods for user registration and login.
@@ -67,7 +68,7 @@ export class Email {
   constructor(
     private _config: Config,
     private _attestation: Attestation,
-    private _store: SecureStore,
+    private _access: AccessResolver,
     private _auth: Auth
   ) {}
 
@@ -114,7 +115,7 @@ export class Email {
     doNotNotify?: boolean;
   }) {
     return request(`${this._config.serviceUrl}/users/auth/email/verify`)
-      .use(context(this._config), access(this._store))
+      .use(context(this._config), access(this._config, this._access))
       .post(args)
       .json<{
         challengeToken: string;
@@ -162,7 +163,7 @@ export class Email {
    */
   async confirm(args: { email?: string; challengeToken: string }) {
     return request(`${this._config.serviceUrl}/users/auth/email/confirm`)
-      .use(context(this._config), access(this._store))
+      .use(context(this._config), access(this._config, this._access))
       .post({
         ...args,
         token: args.challengeToken,
@@ -208,7 +209,7 @@ export class Email {
     } = {}
   ) {
     return request(`${this._config.serviceUrl}/users/auth/email/password`)
-      .use(context(this._config), access(this._store))
+      .use(context(this._config), access(this._config, this._access))
       .post(args)
       .json<{ challengeToken: string }>();
   }
@@ -256,7 +257,7 @@ export class Email {
     doNotNotify?: boolean;
   }) {
     return request(`${this._config.serviceUrl}/users/auth/email/password`)
-      .use(context(this._config), access(this._store))
+      .use(context(this._config), access(this._config, this._access))
       .put({
         ...args,
         token: args.challengeToken,
@@ -346,21 +347,23 @@ export class Email {
     const attestationHash = await sha256(`${args.email}:${challengeToken}`);
     const attest = await this._attestation
       .attest({ hash: attestationHash })
-      .catch(e => {
-        console.warn(
-          'Failed to attest, this is a fatal error unless it is in development mode on simulator.',
-          e
+      .catch(() => {
+        console.info(
+          '[Integrity] Attestation failed - this may happen on simulators or debug environments'
         );
         return null;
       });
     const attestationToken = btoa(JSON.stringify(attest));
 
     const result = await request(`${this._config.serviceUrl}/users/auth/email`)
-      .use(context(this._config))
+      .use(context(this._config), accessSupport(this._config))
       .post({
         ...args,
         token: challengeToken,
         attestationToken,
+        devApiToken:
+          this._config.development?.enabled &&
+          this._config.development?.apiToken,
       })
       .json(json => ({
         accessToken: json.accessToken as string,
@@ -370,7 +373,18 @@ export class Email {
       return result;
     }
 
-    await this._store.put('accessToken', result.data.accessToken);
+    const { data: accessToken, error } = AccessToken.tryParse(
+      result.data.accessToken
+    );
+    if (error || !accessToken) {
+      return {
+        data: undefined,
+        error: error || new Error('Failed to parse access token'),
+      };
+    }
+
+    await this._access.put(accessToken);
+
     return {
       data: {
         user: result.data.user,

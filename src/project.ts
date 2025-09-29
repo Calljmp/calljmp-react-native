@@ -10,6 +10,7 @@ import { Attestation } from './attestation';
 import { Config } from './config';
 import { request } from './request';
 import { context } from './middleware/context';
+import { accessSupport } from './middleware/access';
 
 /**
  * Provides project-related operations for connecting mobile apps to backend projects.
@@ -74,17 +75,22 @@ export class Project {
   async connect() {
     const attest = await this._attestation
       .attest({ platform: Platform.OS })
-      .catch(e => {
-        console.warn(
-          'Failed to attest, this is a fatal error unless it is in development mode on simulator.',
-          e
+      .catch(() => {
+        console.info(
+          '[Integrity] Attestation failed - this may happen on simulators or debug environments'
         );
         return null;
       });
     const attestationToken = btoa(JSON.stringify(attest));
+
     return await request(`${this._config.projectUrl}/app/connect`)
-      .use(context(this._config))
-      .post({ attestationToken })
+      .use(context(this._config), accessSupport(this._config))
+      .post({
+        attestationToken,
+        devApiToken:
+          this._config.development?.enabled &&
+          this._config.development?.apiToken,
+      })
       .json();
   }
 }

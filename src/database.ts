@@ -27,8 +27,8 @@ import { Config } from './config';
 import { access } from './middleware/access';
 import { context } from './middleware/context';
 import { request } from './request';
-import { SecureStore } from './secure-store';
 import { Signal, SignalLock, SignalResult } from './signal';
+import { AccessResolver } from './utils/access-resolver';
 
 const DatabaseComponent = 'database';
 
@@ -83,7 +83,7 @@ export class Database {
    */
   constructor(
     private _config: Config,
-    private _store: SecureStore,
+    private _access: AccessResolver,
     private _signal: Signal
   ) {}
 
@@ -144,7 +144,7 @@ export class Database {
    */
   async query({ sql, params }: { sql: string; params?: (string | number)[] }) {
     return request(`${this._config.serviceUrl}/database/query`)
-      .use(context(this._config), access(this._store))
+      .use(context(this._config), access(this._config, this._access))
       .post({
         sql,
         params,

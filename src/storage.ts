@@ -10,7 +10,7 @@ import { Config } from './config';
 import { access } from './middleware/access';
 import { context } from './middleware/context';
 import { request } from './request';
-import { SecureStore } from './secure-store';
+import { AccessResolver } from './utils/access-resolver';
 
 /**
  * Provides cloud storage APIs for uploading, downloading, and managing files in storage buckets.
@@ -57,13 +57,13 @@ export class Storage {
    * Creates a new Storage instance.
    *
    * @param _config - SDK configuration containing API endpoints
-   * @param _store - Secure storage for access tokens and authentication
+   * @param _access - Access resolver for managing authentication and permissions
    *
    * @internal
    */
   constructor(
     private _config: Config,
-    private _store: SecureStore
+    private _access: AccessResolver
   ) {}
 
   /**
@@ -147,7 +147,7 @@ export class Storage {
       })
     );
     return request(`${this._config.serviceUrl}/data/${bucket}/${key}`)
-      .use(context(this._config), access(this._store))
+      .use(context(this._config), access(this._config, this._access))
       .post(formData)
       .json(jsonToBucketFile);
   }
@@ -241,7 +241,7 @@ export class Storage {
     length?: number;
   }) {
     return request(`${this._config.serviceUrl}/data/${bucket}/${key}`)
-      .use(context(this._config), access(this._store))
+      .use(context(this._config), access(this._config, this._access))
       .params({
         offset,
         length,
@@ -315,7 +315,7 @@ export class Storage {
    */
   async peek({ bucket, key }: { bucket: string; key: string }) {
     return request(`${this._config.serviceUrl}/data/${bucket}/${key}`)
-      .use(context(this._config), access(this._store))
+      .use(context(this._config), access(this._config, this._access))
       .params({ peek: true })
       .get()
       .json(jsonToBucketFile);
@@ -398,7 +398,7 @@ export class Storage {
     tags?: string[];
   }) {
     return request(`${this._config.serviceUrl}/data/${bucket}/${key}`)
-      .use(context(this._config), access(this._store))
+      .use(context(this._config), access(this._config, this._access))
       .put({
         description,
         tags,
@@ -475,7 +475,7 @@ export class Storage {
    */
   async delete({ bucket, key }: { bucket: string; key: string }) {
     return request(`${this._config.serviceUrl}/data/${bucket}/${key}`)
-      .use(context(this._config), access(this._store))
+      .use(context(this._config), access(this._config, this._access))
       .delete()
       .json();
   }
@@ -587,7 +587,7 @@ export class Storage {
     orderField?: string;
   }) {
     return request(`${this._config.serviceUrl}/data/${bucket}/list`)
-      .use(context(this._config), access(this._store))
+      .use(context(this._config), access(this._config, this._access))
       .params({
         offset,
         limit,
@@ -650,7 +650,7 @@ export class Storage {
     cacheTtl?: number;
   }) {
     return request(`${this._config.serviceUrl}/data/${bucket}/${key}/url`)
-      .use(context(this._config), access(this._store))
+      .use(context(this._config), access(this._config, this._access))
       .post({ expiresIn, cacheTtl })
       .json<{ url: string }>();
   }

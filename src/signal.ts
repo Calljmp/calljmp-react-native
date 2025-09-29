@@ -1,9 +1,9 @@
 import { SignalMessage, SignalMessageType } from './common';
 import { Config } from './config';
 import { uuid } from './crypto';
-import { SecureStore } from './secure-store';
 import { makeContext } from './middleware/context';
-import { makeAccess } from './middleware/access';
+import { makeAccess, postAccess } from './middleware/access';
+import { AccessResolver } from './utils/access-resolver';
 
 /**
  * Signal result options for controlling handler behavior
@@ -123,7 +123,7 @@ export class Signal {
 
   constructor(
     private _config: Config,
-    private _store: SecureStore
+    private _access: AccessResolver
   ) {}
 
   /**
@@ -178,7 +178,7 @@ export class Signal {
       .replace('https://', 'wss://');
     const headers = {
       ...makeContext(this._config),
-      ...(await makeAccess(this._store)),
+      ...(await makeAccess(this._config, this._access)),
     };
 
     return new Promise((resolve, reject) => {
@@ -212,6 +212,7 @@ export class Signal {
         };
 
         this._ws.onerror = error => {
+          postAccess(this._config, this._access, error.message);
           reject(error);
         };
       } catch (error) {

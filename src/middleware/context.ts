@@ -19,12 +19,9 @@ export function context(config: Config) {
   };
 }
 
-export function makeContext(config: Config): Record<string, string> {
+export function makeContext(_config: Config): Record<string, string> {
   const data: Record<string, string> = {
     'X-Calljmp-Platform': Platform.OS,
   };
-  if (config.development?.enabled && config.development?.apiToken) {
-    data['X-Calljmp-Development-Api-Token'] = config.development.apiToken;
-  }
   return data;
 }

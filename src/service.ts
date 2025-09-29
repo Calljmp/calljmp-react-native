@@ -6,11 +6,9 @@
  */
 
 import { Config } from './config';
-import { Integrity } from './integrity';
 import { access } from './middleware/access';
 import { context } from './middleware/context';
 import { request } from './request';
-import { SecureStore } from './secure-store';
 import { AccessResolver } from './utils/access-resolver';
 
 /**
@@ -38,8 +36,6 @@ import { AccessResolver } from './utils/access-resolver';
  * @public
  */
 export class Service {
-  private _access: AccessResolver;
-
   /**
    * Creates a new Service instance.
    *
@@ -51,11 +47,8 @@ export class Service {
    */
   constructor(
     private _config: Config,
-    integrity: Integrity,
-    private _store: SecureStore
-  ) {
-    this._access = new AccessResolver(integrity, this._store);
-  }
+    private _access: AccessResolver
+  ) {}
 
   /**
    * Returns the appropriate service URL based on current configuration.
@@ -188,7 +181,7 @@ export class Service {
     }
     return request(`${urlInfo.data.url}/${sanitizedRoute}`).use(
       context(this._config),
-      access(this._store)
+      access(this._config, this._access)
     );
   }
 }

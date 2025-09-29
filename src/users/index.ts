@@ -48,9 +48,9 @@ import { Attestation } from '../attestation';
 import { Config } from '../config';
 import { context } from '../middleware/context';
 import { request } from '../request';
-import { SecureStore } from '../secure-store';
 import { access } from '../middleware/access';
 import { Auth } from './auth';
+import { AccessResolver } from '../utils/access-resolver';
 
 /**
  * Provides comprehensive user management and authentication APIs.
@@ -122,9 +122,9 @@ export class Users {
   constructor(
     private _config: Config,
     attestation: Attestation,
-    private _store: SecureStore
+    private _access: AccessResolver
   ) {
-    this.auth = new Auth(_config, attestation, _store);
+    this.auth = new Auth(_config, attestation, _access);
   }
 
   /**
@@ -171,7 +171,7 @@ export class Users {
    */
   async retrieve() {
     return request(`${this._config.serviceUrl}/users`)
-      .use(context(this._config), access(this._store))
+      .use(context(this._config), access(this._config, this._access))
       .get()
       .json(jsonToUser);
   }
@@ -208,7 +208,7 @@ export class Users {
     tags?: string[] | null;
   }) {
     return request(`${this._config.serviceUrl}/users`)
-      .use(context(this._config), access(this._store))
+      .use(context(this._config), access(this._config, this._access))
       .put(args)
       .json(jsonToUser);
   }

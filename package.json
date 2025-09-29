@@ -1,6 +1,6 @@
 {
   "name": "@calljmp/react-native",
-  "version": "0.0.50",
+  "version": "0.0.51",
   "description": "Calljmp is a secure backend-as-a-service (BaaS) for React Native apps, with auth, storage, SQL access, and attestation support.",
   "main": "./dist/index.cjs.js",
   "keywords": [
@@ -32,9 +32,6 @@
   "peerDependencies": {
     "react": ">=18.2.0",
     "react-native": ">=0.72.0"
-  },
-  "devPeerDependencies": {
-    "@babel/core": "^7.0.0"
   },
   "peerDependenciesMeta": {
     "react-native": {

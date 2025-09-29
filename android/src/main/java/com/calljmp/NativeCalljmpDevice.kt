@@ -15,6 +15,18 @@ class NativeCalljmpDevice(reactContext: ReactApplicationContext) :
 
     private val integrityManager = IntegrityManagerFactory.create(reactContext)
 
+    override fun isSimulator(promise: Promise) {
+        val isEmulator = (android.os.Build.FINGERPRINT.startsWith("generic")
+                || android.os.Build.FINGERPRINT.lowercase().contains("vbox")
+                || android.os.Build.FINGERPRINT.lowercase().contains("test-keys")
+                || android.os.Build.MODEL.contains("Emulator")
+                || android.os.Build.MODEL.contains("Android SDK built for x86")
+                || android.os.Build.MANUFACTURER.contains("Genymotion")
+                || (android.os.Build.BRAND.startsWith("generic") && android.os.Build.DEVICE.startsWith("generic"))
+                || "google_sdk" == android.os.Build.PRODUCT)
+        promise.resolve(isEmulator)
+    }
+
     override fun androidRequestIntegrityToken(
         cloudProjectNumber: Double?,
         data: String,

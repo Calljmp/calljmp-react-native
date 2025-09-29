@@ -1,4 +1,5 @@
 import { Auth } from '.';
+import { AccessToken } from '../../access';
 import { Attestation } from '../../attestation';
 import {
   jsonToUser,
@@ -7,9 +8,10 @@ import {
 } from '../../common';
 import { Config } from '../../config';
 import { sha256 } from '../../crypto';
+import { accessSupport } from '../../middleware/access';
 import { context } from '../../middleware/context';
 import { request } from '../../request';
-import { SecureStore } from '../../secure-store';
+import { AccessResolver } from '../../utils/access-resolver';
 
 /**
  * Provides OAuth2-based authentication methods for third-party provider integration.
@@ -34,7 +36,7 @@ export class Provider {
    * @param _provider - The OAuth2 provider type (Apple, Google, Facebook, etc.)
    * @param _config - SDK configuration containing service URLs and settings
    * @param _attestation - Device attestation provider for security verification
-   * @param _store - Secure storage for access tokens and sensitive data
+   * @param _access - Access resolver for managing access tokens and permissions
    * @param _auth - Parent Auth instance for challenge token generation
    *
    * @internal
@@ -43,7 +45,7 @@ export class Provider {
     private _provider: UserAuthenticationProvider,
     private _config: Config,
     private _attestation: Attestation,
-    private _store: SecureStore,
+    private _access: AccessResolver,
     private _auth: Auth
   ) {}
 
@@ -102,10 +104,9 @@ export class Provider {
     );
     const attest = await this._attestation
       .attest({ hash: attestationHash })
-      .catch(e => {
-        console.warn(
-          'Failed to attest, this is a fatal error unless it is in development mode on simulator.',
-          e
+      .catch(() => {
+        console.info(
+          '[Integrity] Attestation failed - this may happen on simulators or debug environments'
         );
         return null;
       });
@@ -114,8 +115,15 @@ export class Provider {
     const result = await request(
       `${this._config.serviceUrl}/users/auth/provider/${this._provider}`
     )
-      .use(context(this._config))
-      .post({ ...args, challengeToken, attestationToken })
+      .use(context(this._config), accessSupport(this._config))
+      .post({
+        ...args,
+        challengeToken,
+        attestationToken,
+        devApiToken:
+          this._config.development?.enabled &&
+          this._config.development?.apiToken,
+      })
       .json(json => ({
         accessToken: json.accessToken as string,
         user: jsonToUser(json.user),
@@ -124,7 +132,18 @@ export class Provider {
       return result;
     }
 
-    await this._store.put('accessToken', result.data.accessToken);
+    const { data: accessToken, error } = AccessToken.tryParse(
+      result.data.accessToken
+    );
+    if (error || !accessToken) {
+      return {
+        data: undefined,
+        error: new Error('Received invalid access token from server'),
+      };
+    }
+
+    await this._access.put(accessToken);
+
     return {
       data: {
         user: result.data.user,

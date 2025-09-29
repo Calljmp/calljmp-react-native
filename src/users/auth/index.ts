@@ -62,15 +62,14 @@
  * @public
  */
 
-import { AccessToken } from '../../access';
 import { Attestation } from '../../attestation';
 import { Config } from '../../config';
 import { context } from '../../middleware/context';
 import { request } from '../../request';
-import { SecureStore } from '../../secure-store';
 import { Provider } from './provider';
 import { Email } from './email';
 import { UserAuthenticationProvider } from '../../common';
+import { AccessResolver } from '../../utils/access-resolver';
 
 /**
  * Main authentication class providing access to various authentication methods.
@@ -140,21 +139,21 @@ export class Auth {
   constructor(
     private _config: Config,
     attestation: Attestation,
-    private _store: SecureStore
+    private _access: AccessResolver
   ) {
-    this.email = new Email(_config, attestation, _store, this);
+    this.email = new Email(_config, attestation, _access, this);
     this.apple = new Provider(
       UserAuthenticationProvider.Apple,
       _config,
       attestation,
-      _store,
+      _access,
       this
     );
     this.google = new Provider(
       UserAuthenticationProvider.Google,
       _config,
       attestation,
-      _store,
+      _access,
       this
     );
   }
@@ -181,14 +180,8 @@ export class Auth {
    * @public
    */
   async authenticated() {
-    const token = await this._store.get('accessToken');
-    if (token) {
-      const { data: accessToken } = AccessToken.tryParse(token);
-      if (accessToken) {
-        return accessToken.isValid && accessToken.userId !== null;
-      }
-    }
-    return false;
+    const { data: token } = await this._access.resolve();
+    return token?.isValid === true && token.userId !== null;
   }
 
   /**
@@ -246,6 +239,6 @@ export class Auth {
    * @public
    */
   async clear() {
-    await this._store.delete('accessToken');
+    await this._access.clear();
   }
 }
