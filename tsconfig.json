@@ -4,6 +4,9 @@
   "include": [],
   "references": [
     {
+      "path": "../agent"
+    },
+    {
       "path": "./tsconfig.lib.json"
     }
   ]

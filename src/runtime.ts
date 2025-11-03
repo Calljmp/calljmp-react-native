@@ -1,18 +1,15 @@
 export type AnyFunction = (...args: any[]) => any;
 
-const GLOBAL_KEY = Symbol.for('calljmp.operator.meta');
+const GLOBAL_KEY = Symbol.for('calljmp.agent.meta');
 const globalAny = globalThis as any;
-const metaOperatorMap: WeakMap<AnyFunction, OperatorMeta> = (globalAny[
-  GLOBAL_KEY
-] ??= new WeakMap<AnyFunction, OperatorMeta>());
 
-export interface OperatorMeta {
+const agentsMeta: WeakMap<AnyFunction, AgentMeta> = (globalAny[GLOBAL_KEY] ??=
+  new WeakMap<AnyFunction, AgentMeta>());
+
+export interface AgentMeta {
   code: string;
-  name?: string;
 }
 
-export function operatorMeta<T extends AnyFunction>(
-  fn: T
-): OperatorMeta | undefined {
-  return metaOperatorMap.get(fn);
+export function agentMeta(fn: AnyFunction) {
+  return agentsMeta.get(fn);
 }

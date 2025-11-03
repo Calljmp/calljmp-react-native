@@ -66,31 +66,31 @@ export class Calljmp {
    * User management and authentication API for handling user registration, login, and profile operations.
    * @readonly
    */
-  public readonly users: Users;
+  private readonly users: Users;
 
   /**
    * Database query API for executing SQL operations on the backend SQLite database.
    * @readonly
    */
-  public readonly database: Database;
+  private readonly database: Database;
 
   /**
    * Service API for making authenticated requests to custom backend endpoints.
    * @readonly
    */
-  public readonly service: Service;
+  private readonly service: Service;
 
   /**
    * Cloud storage API for uploading, downloading, and managing files in storage buckets.
    * @readonly
    */
-  public readonly storage: Storage;
+  private readonly storage: Storage;
 
   /**
    * Signal API for real-time communication and event handling.
    * @readonly
    */
-  public readonly realtime: Realtime;
+  private readonly realtime: Realtime;
 
   /**
    * AI API for interacting with machine learning models and services.
@@ -146,5 +146,11 @@ export class Calljmp {
     this.storage = new Storage(finalConfig, access);
     this.realtime = new Realtime(signal);
     this.ai = new AI(finalConfig, access);
+
+    void this.users;
+    void this.database;
+    void this.service;
+    void this.storage;
+    void this.realtime;
   }
 }

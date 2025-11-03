@@ -1,15 +1,15 @@
 {
   "name": "@calljmp/react-native",
-  "version": "0.0.51",
+  "version": "0.0.52",
   "description": "Calljmp is a secure backend-as-a-service (BaaS) for React Native apps, with auth, storage, SQL access, and attestation support.",
   "main": "./dist/index.cjs.js",
   "keywords": [
+    "calljmp",
     "react-native",
     "expo",
-    "storage",
-    "function",
-    "sqlite",
-    "ai"
+    "ai",
+    "agents",
+    "workflows"
   ],
   "repository": {
     "type": "git",
@@ -20,7 +20,7 @@
   "bugs": {
     "url": "https://github.com/Calljmp/calljmp-react-native/issues"
   },
-  "homepage": "https://github.com/Calljmp/calljmp-react-native#readme",
+  "homepage": "https://calljmp.com",
   "codegenConfig": {
     "name": "RNCalljmpSpec",
     "type": "modules",
@@ -28,6 +28,9 @@
     "android": {
       "javaPackageName": "com.calljmp"
     }
+  },
+  "dependencies": {
+    "@calljmp/agent": "^0.0.2"
   },
   "peerDependencies": {
     "react": ">=18.2.0",
@@ -62,7 +65,8 @@
     "@nx/rollup": "20.4.0",
     "@react-native/babel-preset": "^0.81.0",
     "@tsconfig/node-lts": "^22.0.2",
-    "rollup": "^4.14.0"
+    "rollup": "^4.14.0",
+    "zod": "^3.22.3"
   },
   "nx": {
     "name": "sdk-react-native",

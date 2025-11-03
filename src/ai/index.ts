@@ -1,10 +1,13 @@
 import {
+  AgentConfig,
+  AgentType,
   Message,
   Model,
   ModelByCapability,
   ModelIf,
   ModelInputs,
   ModelOutputs,
+  ServiceErrorCode,
 } from '../common';
 import { Config } from '../config';
 import { makeAccess, access, postAccess } from '../middleware/access';
@@ -14,16 +17,8 @@ import { AccessResolver } from '../utils/access-resolver';
 import EventSource, { DataEvent } from '../utils/event-source';
 import asyncGenerator from '../utils/async-generator';
 import { DefaultTextGenerationModel, TextStreamEvent } from './common';
-import {
-  FlowBuilder,
-  OperatorConfig,
-  OperatorContext,
-  WorkflowConfig,
-  Operator,
-  Workflow,
-  InferInitial,
-  InferOutput,
-} from './workflow';
+import { agentMeta } from '../runtime';
+import { sha256 } from '../crypto';
 
 export type { Message, Model, ModelInputs, ModelOutputs };
 
@@ -35,32 +30,6 @@ export class AI {
 
   private get _invokeUrl() {
     return `${this._config.serviceUrl}/ai/invoke`;
-  }
-
-  operator<Input, Output>(
-    run: (context: OperatorContext<Input>) => Output | Promise<Output>,
-    config?: OperatorConfig & { name?: string }
-  ): Operator<Input, Output> {
-    return new Operator(run, config);
-  }
-
-  workflow<F extends FlowBuilder<any, any>>(
-    name: string,
-    description: string,
-    build: (flow: FlowBuilder<any, any>) => F,
-    config?: WorkflowConfig
-  ): Workflow<InferInitial<F>, InferOutput<F>> {
-    const flow = build(new FlowBuilder<unknown, never>());
-    return new Workflow(
-      {
-        config: this._config,
-        access: this._access,
-      },
-      name,
-      description,
-      flow,
-      config
-    );
   }
 
   async generateText<
@@ -143,4 +112,89 @@ export class AI {
       controller.end();
     }
   }
+
+  agent<Input, Output>(
+    config: AgentConfig,
+    runner: (input: Input) => Promise<Output>
+  ): Agent<Input, Output> {
+    return new Agent(this._config, this._access, config, runner);
+  }
+}
+
+interface AgentRunner<Input, Output> {
+  (input: Input): Promise<Output>;
+}
+
+class Agent<Input, Output> {
+  private readonly _code: string;
+  private _fingerprintInternal: string | null = null;
+
+  constructor(
+    private readonly _config: Config,
+    private readonly _access: AccessResolver,
+    agentConfig: AgentConfig,
+    runner: AgentRunner<Input, Output>
+  ) {
+    const meta = agentMeta(runner);
+    if (!meta) {
+      throw new Error(
+        `Agent ${agentConfig.name} is missing metadata. Make sure it is defined using calljmp.ai.agent().\nIf the issue persists, please double check you configured the Babel plugin (\`plugins: ['@calljmp/react-native/babel-plugin']\`) correctly.`
+      );
+    }
+    this._code = codeTemplate({
+      config: agentConfig,
+      run: meta.code,
+    });
+  }
+
+  private async fingerprint() {
+    if (!this._fingerprintInternal) {
+      this._fingerprintInternal = await sha256(
+        JSON.stringify({
+          code: this._code,
+          type: AgentType.Ephemeral,
+        }),
+        'hex'
+      );
+    }
+    return this._fingerprintInternal;
+  }
+
+  async run(input: Input) {
+    const makeRequest = () =>
+      request(`${this._config.serviceUrl}/ai/agent`).use(
+        context(this._config),
+        access(this._config, this._access)
+      );
+
+    const fingerprint = await this.fingerprint();
+
+    // optimistically try to invoke using cached agent
+    {
+      const result = await makeRequest()
+        .post({ id: fingerprint, input })
+        .json<{ id: string }>();
+
+      if (result.error && result.error.code === ServiceErrorCode.NotFound) {
+        // cache miss, continue to deploy
+      } else {
+        return result;
+      }
+    }
+
+    return makeRequest()
+      .post({
+        code: this._code,
+        input,
+      })
+      .json<{ id: string }>();
+  }
+}
+
+function codeTemplate(args: { config: AgentConfig; run: string }): string {
+  return `
+import { workflow, web } from '@calljmp/agent';
+export const config = ${JSON.stringify(args.config)};
+export const run = ${args.run};
+`.trim();
 }

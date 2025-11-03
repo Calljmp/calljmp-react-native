@@ -2,9 +2,7 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "out-tsc/sdk",
-    "types": [
-      "node"
-    ],
+    "types": ["node"],
     "module": "esnext",
     "moduleResolution": "bundler",
     "rootDir": "src",
@@ -33,5 +31,10 @@
     "src/**/*.ts",
     "src/**/*.tsx",
     "global.d.ts"
+  ],
+  "references": [
+    {
+      "path": "../agent/tsconfig.lib.json"
+    }
   ]
 }
