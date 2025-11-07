@@ -193,7 +193,7 @@ class Agent<Input, Output> {
 
 function codeTemplate(args: { config: AgentConfig; run: string }): string {
   return `
-import { workflow, web } from '@calljmp/agent';
+import { workflow, web, llm, vault } from '@calljmp/agent';
 export const config = ${JSON.stringify(args.config)};
 export const run = ${args.run};
 `.trim();
